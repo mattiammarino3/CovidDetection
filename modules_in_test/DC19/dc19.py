@@ -5,7 +5,7 @@ import torch
 import torchvision
 import numpy as np
 
-import torchprof
+from kpiprofile import Profile
 
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -117,10 +117,11 @@ def show_preds():
     resnet18.eval()
     images, labels =next(iter(dl_test))
 
-    with torchprof.Profile(resnet18, use_cuda=False, profile_memory=True) as prof:
+    with Profile(resnet18, use_cuda=False, profile_memory=True) as prof:
         outputs = resnet18(images)
     _, preds=torch.max(outputs, 1)
-    print(prof.display(show_events=False))
+    #print(prof.display(show_events=False))
+    prof.getKPIData()
 
     show_images(images, labels, preds)
 
