@@ -9,7 +9,7 @@ class nnPerf():
     def getStatDF(self):
         return self.statDF
 
-    def getStatfromCSV(self, csv_filepath, header=None):
+    def getStatfromCSV(self, csv_filepath, header=None, show=True):
         try: 
             self.csv_filepath = csv_filepath
             self.statDF = pd.read_csv(csv_filepath, header=header)
@@ -41,13 +41,14 @@ class nnPerf():
 
             totalNOC = self.statDF[15].sum(axis = 0)
 
-            print (self.statDF.head(5), header)
-            print ("---------------------------------------------------------------------------------")
-            print ("cpu_total_time = {:.2f}, gpu_total_time = {}".format(cpuTotalTime, gpuTotalTime))
-            print ("cpu_mem_max = {}, gpu_mem_max = {}".format(maxCPUMem, maxGPUMem))
-            print ("total_number_of_call = {}".format(totalNOC))
-            print ("avg_cpu_time_per_module = {:.2f}".format(cpuTotalTime/totalNOC))
-            print ("avg_gpu_time_per_module = {:.2f}".format(gpuTotalTime/totalNOC))
+            if show:
+                print (self.statDF.head(5), header)
+                print ("---------------------------------------------------------------------------------")
+                print ("cpu_total_time = {:.2f}, gpu_total_time = {}".format(cpuTotalTime, gpuTotalTime))
+                print ("cpu_mem_max = {}, gpu_mem_max = {}".format(maxCPUMem, maxGPUMem))
+                print ("total_number_of_call = {}".format(totalNOC))
+                print ("avg_cpu_time_per_module = {:.2f}".format(cpuTotalTime/totalNOC))
+                print ("avg_gpu_time_per_module = {:.2f}".format(gpuTotalTime/totalNOC))
 
             retDic =  {"cpu_total_time": cpuTotalTime, "gpu_total_time": gpuTotalTime, "total_number_of_call": totalNOC,\
                        "avg_cpu_time_per_module": (cpuTotalTime/totalNOC), "avg_gpu_time_per_module": (gpuTotalTime/totalNOC)}
