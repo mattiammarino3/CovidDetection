@@ -237,20 +237,30 @@ class Profile(object):
         file = model + "KPI.csv"
         f = open(file, 'w')
         with f:
-            headers = ['Module', 'Self CPU total', 'Self_CPU_Time_UOM', 'CPU total', 'CPU_Total_UOM', 
-                       'Self CUDA total', 'Self_CUDA_UOM', 'CUDA total', 'CUDA_Total_UOM',
-                       'Self CPU Mem','Self_CPU_Mem_UOM', 'CPU Mem','CPU_Mem_UOM','Self CUDA Mem',
-                       'Self_CUDA_Mem_UOM','CUDA Mem','CUDA_Mem_UOM','Number of Calls']
+            headers = ['MODULE', 'SELF_CPU_TOTAL', 'SELF_CPU_TIME_UOM', 'CPU_TOTAL', 'CPU_TOTAL_UOM', 
+                       'SELF_GPU_TOTAL', 'SELF_GPU_UOM', 'GPU_TOTAL', 'GPU_TOTAL_UOM',
+                       'SELF_CPU MEM','SELF_CPU_MEM_UOM', 'CPU_MEM','CPU_MEM_UOM','SELF_GPU_MEM',
+                       'SELF_GPU_MEM_UOM','GPU_MEM','GPU_MEM_UOM','NUMBER_OF_CALLS']
             writer = csv.DictWriter(f, fieldnames=headers)
             writer.writeheader()
             for i in range(len(rows)):
                 kpi = rows[i]
-                writer.writerow({'Module':kpi.name, 'Self CPU total':kpi.self_cpu_total, 'Self_CPU_Time_UOM': 'ms',
-                                 'CPU total':kpi.cpu_total, 'CPU_Total_UOM': 'ms', 
-                                 'Self CUDA total':kpi.self_cuda_total, 'Self_CUDA_UOM':'ms',
-                                 'CUDA total':kpi.cuda_total, 'CUDA_Total_UOM': 'ms',
-                                 'Self CPU Mem':kpi.self_cpu_memory, 'Self_CPU_Mem_UOM': 'kb',
-                                 'CPU Mem':kpi.cpu_memory,'CPU_Mem_UOM': 'kb', 
-                                 'Self CUDA Mem':kpi.self_cuda_memory, 'Self_CUDA_Mem_UOM':'kb',
-                                 'CUDA Mem':kpi.cuda_memory,'CUDA_Mem_UOM': 'kb','Number of Calls':kpi.occurrences})
+                writer.writerow({'MODULE':kpi.name, 
+                                 'SELF_CPU_TOTAL':kpi.self_cpu_total, 
+                                 'SELF_CPU_TIME_UOM': 'ms',
+                                 'CPU_TOTAL':kpi.cpu_total, 
+                                 'CPU_TOTAL_UOM': 'ms', 
+                                 'SELF_GPU_TOTAL':kpi.self_cuda_total, 
+                                 'SELF_GPU_UOM':'ms',
+                                 'GPU_TOTAL':kpi.cuda_total, 
+                                 'GPU_TOTAL_UOM': 'ms',
+                                 'SELF_CPU MEM':kpi.self_cpu_memory, 
+                                 'SELF_CPU_MEM_UOM': 'kb',
+                                 'CPU_MEM':kpi.cpu_memory,
+                                 'CPU_MEM_UOM': 'kb', 
+                                 'SELF_GPU_MEM':kpi.self_cuda_memory, 
+                                 'SELF_GPU_MEM_UOM':'kb',
+                                 'GPU_MEM':kpi.cuda_memory,
+                                 'GPU_MEM_UOM': 'kb',
+                                 'NUMBER_OF_CALLS': kpi.occurrences})
         
