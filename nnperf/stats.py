@@ -5,12 +5,12 @@ import pandas as pd
 class nnPerf():
     def __init__(self):
         self.cvs_filepath = None
-    
+
     def getStatDF(self):
         return self.statDF
 
     def getStatfromCSV(self, csv_filepath, header=None, show=True):
-        try: 
+        try:
             self.csv_filepath = csv_filepath
             self.statDF = pd.read_csv(csv_filepath, header=header)
 
@@ -57,9 +57,9 @@ class nnPerf():
             print (e)
 
 nperf_obj = nnPerf()
-nperf_obj.getStatfromCSV("sample_data.csv")
-        
+nperf_obj.getStatfromCSV("ResNetKPI.csv", header=True)
 
-        
-            
+
+
+
 

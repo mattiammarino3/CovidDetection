@@ -1,11 +1,15 @@
 import os
+import sys
 import shutil
 import random
 import torch
 import torchvision
 import numpy as np
 
-from kpiprofile import Profile
+#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+#print (os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+#from kpiprofile import Profile
+from nnperf.kpiprofile import Profile
 
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -161,6 +165,6 @@ def train(epochs):
                     return
         train_loss/=(train_step+1)
         print(f'Training loss: {train_loss:.4f}')
-        
+
 show_preds()
-    
+

@@ -5,7 +5,7 @@ from collections import OrderedDict, defaultdict, namedtuple
 import torch.autograd.profiler as torch_profiler
 import csv
 
-from display import traces_to_display
+from .display import traces_to_display
 
 Trace = namedtuple("Trace", ["path", "leaf", "module"])
 KPIObject = namedtuple(
