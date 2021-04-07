@@ -58,7 +58,7 @@ class Profile(object):
         if not self.enabled:
             return self
         if self.entered:
-            raise RuntimeError("torchprof profiler is not reentrant")
+            raise RuntimeError("Profiler is not reentrant")
         self.entered = True
         self._forwards = {}  # store the original forward functions
         self.traces = tuple(map(self._hook_trace, walk_modules(self._model)))
@@ -137,7 +137,7 @@ class Profile(object):
                 use_cuda=self.use_cuda,
                 profile_memory=self.profile_memory,
             )
-        return "<unfinished torchprof.profile>"
+        return "<unfinished profile>"
     
     def getKPIData(self):
         

@@ -123,6 +123,7 @@ def show_preds():
 
     with Profile(resnet18, use_cuda=False, profile_memory=True) as prof:
         outputs = resnet18(images)
+
     _, preds=torch.max(outputs, 1)
     #print(prof.display(show_events=False))
     prof.getKPIData()
