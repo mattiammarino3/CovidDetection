@@ -9,8 +9,6 @@ import torchvision
 import numpy as np
 import torch.nn as nn
 
-from nnperf.kpiprofile import Profile
-
 from PIL import Image
 from matplotlib import pyplot as plt
 
@@ -159,35 +157,100 @@ def show_images(images,labels, preds):
     plt.tight_layout()
     plt.show()
 
+# images, labels = next(iter(dl_train)) #Fetch the next batch of images
+# show_images(images, labels, labels)
 
-### Loading the Model ###
+# images, labels = next(iter(dl_test))
+# show_images(images, labels, labels)
+
+
+
+### Creating the Model ###
+
 C_models = [
           ('resnet18', C19_model.resnet18()), 
           #('densenet', C19_model.densenet())
         ]
 
-def show_preds(name):
+def show_preds():
     model.eval()  #Setting the model to evaluation mode
     images, labels = next(iter(dl_test))
-
-    with Profile(model, use_cuda=False, profile_memory=True) as prof:
-        outputs = model(images)
-        
+    outputs = model(images)
     if torch.cuda.device_count() > 1:
-        outputs = outputs.cpu()
+        outputs = outputs.cpu() 
+    _, preds = torch.max(outputs, 1)
+    # show_images(images, labels, preds)
+    print(labels, preds)
 
-    _, preds=torch.max(outputs, 1)
-    #print(prof.display(show_events=False))
-    prof.getKPIData()
 
-    show_images(images, labels, preds)
+### Training the Model ###
+def train(epochs, name):
+    print('*'*40)
+    print('Starting training model: ' + name + ' ...')
+    print('*'*40)
+
+    for e in range(0, epochs):
+        print('='*20)
+        print(f'Starting epoch {e + 1}/{epochs}')
+        print('='*20)
+
+        train_loss = 0.
+        val_loss = 0.  #Not computing val_loss since we'll be evaluating the model multiple times within one epoch
+        
+        model.train() # set model to training phase
+        
+        for train_step, (images, labels) in enumerate(dl_train):
+            optimizer.zero_grad()
+            if torch.cuda.device_count() > 1:
+                outputs = model(images.to(device))
+                labels = labels.to(device)
+            else:                
+                outputs = model(images)
+            loss = loss_fn(outputs, labels)
+            #Once we get the loss we need to take a gradient step
+            loss.backward() #Back propogation
+            optimizer.step() #Completes the gradient step by updating all the parameter values(We are using all parameters)
+            train_loss += loss.item() #Loss is a tensor which can't be added to train_loss so .item() converts it to float
+            
+            #Evaluating the model every 20th step
+            if train_step % 20 == 0:
+                print('Evaluating at step', train_step)
+
+                accuracy = 0
+
+                model.eval() # set model to eval phase
+
+                for val_step, (images, labels) in enumerate(dl_test):
+                    outputs = model(images)
+                    if torch.cuda.device_count() > 1:
+                        outputs = outputs.cpu() 
+                    loss = loss_fn(outputs, labels)
+                    val_loss += loss.item()
+
+                    _, preds = torch.max(outputs, 1) # 1 corresponds to the values and ) corresponds to the no of examples
+                    accuracy += sum((preds == labels).numpy()) #adding correct preds to acc
+
+                val_loss /= (val_step + 1) # 15 test batches so this logic gives the value for each step
+                accuracy = accuracy/len(test_dataset)
+                print(f'Validation Loss: {val_loss:.4f}, Accuracy: {accuracy:.4f}')
+
+                #show_preds()
+                model.train()
+
+                if accuracy >= 0.95:
+                    print('Performance condition satisfied, stopping..')
+                    return
+
+        train_loss /= (train_step + 1)
+
+        print(f'Training Loss: {train_loss:.4f}')
+    print('Training complete..')
 
 
 for name, c_model in C_models:
-    model = torch.load(name + '.pt')
-    print('='*20)
-    print("Model: ", name , " was loaded.")
-    print('='*20)
+    model = c_model.get_model()
+    loss_fn = c_model.get_loss()
+    optimizer = c_model.get_optimizer()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -198,4 +261,10 @@ for name, c_model in C_models:
 
     model.to(device)
 
-    show_preds(name)
+
+    train(epochs=1, name=name)
+
+    torch.save(model, name + '.pt')
+    print('='*20)
+    print("Model: ", name , " was saved.")
+    print('='*20)
