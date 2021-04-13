@@ -1,18 +1,62 @@
 import os
 import sys
+import csv
 import numpy as np
 import pandas as pd
 
 class nnPerf():
     def __init__(self):
-        self.cvs_filepath = None
+        self.cvs_filepath = ""
 
-    def getStatDF(self):
+    def getPerfStatDF(self):
         return self.statDF
 
-    def getStatfromCSV(self, csv_filepath, show=True):
+    """ Save epoch, accuracy, f1score to CSV file  
+    input: 
+        csv_file: string -> CSV file path 
+        epoch: int -> epoch
+        mode: str -> writing mode: default "a"
+        accuracy: float -> accuracy 
+        f1score: float -> f1score 
+    output:
+        None
+    """
+    def saveAccToCSV(self, csv_filepath: str = "", mode: str = "a", epoch: int=0, accuracy: float=0.0, f1score: float=0.0) -> None:
         try:
-            self.csv_filepath = csv_filepath
+            if len(self.cvs_filepath) == 0:
+                if len(csv_filepath) == 0:
+                    raise Exception('no filename has provided', 1)
+                else:
+                    self.csv_filepath = csv_filepath
+
+            with open(self.csv_filepath, mode=mode) as csv_file:
+                csv_writerObj = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                csv_writerObj.writerow([epoch, accuracy, f1score])
+
+        except Exception as e:
+            print("error: {}".format(e.args))
+        except OSError as err:
+            print("error: {0}".format(err))
+        except ValueError:
+            print("Could not convert data to an integer.")
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+            raise
+
+    """ Get performance(CPU, GPU and their memoery usage) statistics from CSV file  
+    input: 
+        csv_file: string -> CSV file path 
+        show: bool -> show statistics data (mostly debugging purposes)
+    output:
+        None
+    """
+    def getPerfStatfromCSV(self, csv_filepath: str = "", show=True) -> None:
+        try:
+            if len(self.cvs_filepath) == 0:
+                if len(csv_filepath) == 0:
+                    raise Exception('no filename has provided', 1)
+                else:
+                    self.csv_filepath = csv_filepath
 
             self.statDF = pd.read_csv(csv_filepath, header=0) #, skiprows=[0])
 
@@ -56,6 +100,8 @@ class nnPerf():
 
             retDic =  {"cpu_total_time": cpuTotalTime, "gpu_total_time": gpuTotalTime, "total_number_of_call": totalNOC,\
                        "avg_cpu_time_per_module": (cpuTotalTime/totalNOC), "avg_gpu_time_per_module": (gpuTotalTime/totalNOC)}
+        except Exception as e:
+            print("error: {}".format(e.args))
         except OSError as err:
             print("error: {0}".format(err))
         except ValueError:
@@ -64,9 +110,10 @@ class nnPerf():
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
-nperf_obj = nnPerf()
-nperf_obj.getStatfromCSV("ResNetKPI.csv", show=True)
-
+# test purpose only
+#nperf_obj = nnPerf()
+#nperf_obj.getPerfStatfromCSV("ResNetKPI.csv", show=True)
+#nperf_obj.saveAccToCSV("test.csv","a", 0, 0.99, 0.99)
 
 
 
