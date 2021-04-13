@@ -1,3 +1,5 @@
+#python3.8 train.py
+
 ### Importing Libraries ###
 import C19_model
 
@@ -8,6 +10,7 @@ import torch
 import torchvision
 import numpy as np
 import torch.nn as nn
+import splitfolders
 
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -17,34 +20,15 @@ torch.manual_seed(0)
 print('Using PyTorch version', torch.__version__)
 
 ### Preparing Training and Test Sets ###
-from distutils.dir_util import copy_tree
-
-
 directory = './data/COVID-19_Radiography_Dataset'
 
-source_dirs = ['NORMAL', 'Viral Pneumonia', 'COVID','Lung_Opacity']
-input_dir = './train'
-output_dir = './test'
-root_dir = './train/COVID-19_Radiography_Dataset'
+source_dirs = ['Normal', 'Viral Pneumonia', 'COVID','Lung_Opacity']
+train_dir = './model_data/train'
+val_dir = './model_data/val'
+test_dir = './model_data/test'
 
-# if os.path.isdir(os.path.join(directory, source_dirs[1])):
-#     if not os.path.isdir(input_dir):
-#         os.mkdir(input_dir)
-#         copy_tree(directory, input_dir)
-#     if not os.path.isdir(output_dir):
-#         os.mkdir(output_dir)
-        
-#     for c in source_dirs:
-#         if not os.path.isdir(os.path.join(output_dir, c)):
-#             os.mkdir(os.path.join(output_dir, c))
-            
-#     for c in source_dirs:
-#         images = [x for x in os.listdir(os.path.join(input_dir, c)) if x.lower().endswith('png')]
-#         selected_images = random.sample(images, 30)
-#         for image in selected_images:
-#             source_path = os.path.join(input_dir, c, image)
-#             target_path = os.path.join(output_dir, c, image)
-#             shutil.move(source_path, target_path)
+if not os.path.isdir("model_data"):
+    splitfolders.ratio('./data/COVID-19_Radiography_Dataset', output="model_data", seed=1337, ratio=(.8, 0.1,0.1)) 
 
 
 
@@ -53,7 +37,7 @@ class ChestXRayDataset(torch.utils.data.Dataset):
     def __init__(self, image_dirs, transform):
         def get_images(class_name):
             images = [x for x in os.listdir(image_dirs[class_name]) if x.lower().endswith('png')]
-            #print(f'Found {len(images)} {class_name} examples')
+            print(f'Found {len(images)} {class_name} examples')
             return images
         
         self.images = {}
@@ -80,60 +64,39 @@ class ChestXRayDataset(torch.utils.data.Dataset):
 
 
 
-### Image Transformations ###
-#Creating a Transformation Object
-train_transform = torchvision.transforms.Compose([
+### Prepare DataLoader ###
+def getDataSet(dataset_dir):
+    dataset_dirs = {
+        'Normal': dataset_dir + '/Normal',
+        'Viral': dataset_dir + '/Viral Pneumonia',
+        'COVID-19': dataset_dir + '/COVID',
+        'Lung_Opacity': dataset_dir + '/Lung_Opacity'
+    }
+    data_transform = torchvision.transforms.Compose([
     #Converting images to the size that the model expects
     torchvision.transforms.Resize(size=(224,224)),
     torchvision.transforms.RandomHorizontalFlip(), #A RandomHorizontalFlip to augment our data
-    torchvision.transforms.ToTensor(), #Converting to tensor
+    torchvision.transforms.ToTensor(), #Converting to tensor    
     torchvision.transforms.Normalize(mean = [0.485, 0.456, 0.406],
-                                    std = [0.229, 0.224, 0.225]) #Normalizing the data using the mean and std of Imagenet
+                                    std = [0.229, 0.224, 0.225]) #Normalizing the data using the Imagenet pretrianed model
     
-])
-
-#Creating a Transformation Object
-test_transform = torchvision.transforms.Compose([
-    #Converting images to the size that the model expects
-    torchvision.transforms.Resize(size=(224,224)),
-# We don't do data augmentation in the test/val set    
-    torchvision.transforms.ToTensor(), #Converting to tensor
-    torchvision.transforms.Normalize(mean = [0.485, 0.456, 0.406],
-                                    std = [0.229, 0.224, 0.225]) #Normalizing the data using the mean and std of Imagenet
-    
-])
+    ])
+    return ChestXRayDataset(dataset_dirs, data_transform)
 
 
-
-### Prepare DataLoader ###
-train_dirs = {
-    'Normal': input_dir + '/NORMAL',
-    'Viral': input_dir + '/Viral Pneumonia',
-    'COVID-19': input_dir + '/COVID',
-    'Lung_Opacity': input_dir + '/Lung_Opacity'
-}
-
-train_dataset = ChestXRayDataset(train_dirs, train_transform)
-
-test_dirs = {
-    'Normal': output_dir + '/NORMAL',
-    'Viral': output_dir + '/Viral Pneumonia',    
-    'COVID-19': output_dir + '/COVID',
-    'Lung_Opacity': output_dir + '/Lung_Opacity',
-}
-
-test_dataset = ChestXRayDataset(test_dirs, test_transform)
+train_dataset = getDataSet(train_dir)
+val_dataset = getDataSet(val_dir)
+test_dataset = getDataSet(test_dir)
 
 batch_size = 6
 
 dl_train = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-
+dl_val = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 dl_test = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
-# print('Num of training batches', len(dl_train))
-# print('Num of test batches', len(dl_test))
-
-
+print('Num of training batches', len(dl_train))
+print('Num of validation batches', len(dl_val))
+print('Num of test batches', len(dl_test))
 
 ### Data Visualization ###
 class_names = train_dataset.class_names
@@ -160,27 +123,34 @@ def show_images(images,labels, preds):
 # images, labels = next(iter(dl_train)) #Fetch the next batch of images
 # show_images(images, labels, labels)
 
+# images, labels = next(iter(dl_val))
+# show_images(images, labels, labels)
+
 # images, labels = next(iter(dl_test))
 # show_images(images, labels, labels)
 
 
-
 ### Creating the Model ###
-
 C_models = [
           ('resnet18', C19_model.resnet18()), 
-          #('densenet', C19_model.densenet())
+          ('densenet', C19_model.densenet())
         ]
 
 def show_preds():
     model.eval()  #Setting the model to evaluation mode
     images, labels = next(iter(dl_test))
-    outputs = model(images)
+
+    with Profile(model, use_cuda=False, profile_memory=True) as prof:
+        outputs = model(images)
+        
     if torch.cuda.device_count() > 1:
-        outputs = outputs.cpu() 
-    _, preds = torch.max(outputs, 1)
-    # show_images(images, labels, preds)
-    print(labels, preds)
+        outputs = outputs.cpu()
+
+    _, preds=torch.max(outputs, 1)
+    #print(prof.display(show_events=False))
+    prof.getKPIData()
+
+    show_images(images, labels, preds)
 
 
 ### Training the Model ###
@@ -201,7 +171,7 @@ def train(epochs, name):
         
         for train_step, (images, labels) in enumerate(dl_train):
             optimizer.zero_grad()
-            if torch.cuda.device_count() > 1:
+            if torch.cuda.device_count() > 0:
                 outputs = model(images.to(device))
                 labels = labels.to(device)
             else:                
@@ -220,12 +190,18 @@ def train(epochs, name):
 
                 model.eval() # set model to eval phase
 
-                for val_step, (images, labels) in enumerate(dl_test):
-                    outputs = model(images)
-                    if torch.cuda.device_count() > 1:
-                        outputs = outputs.cpu() 
+                for val_step, (images, labels) in enumerate(dl_val):
+                    if torch.cuda.device_count() > 0:
+                        outputs = model(images.to(device))
+                        labels = labels.to(device)
+                    else:                
+                        outputs = model(images)
+                    
                     loss = loss_fn(outputs, labels)
                     val_loss += loss.item()
+                    if torch.cuda.device_count() > 0:
+                        outputs = outputs.cpu()
+                        labels = labels.cpu()
 
                     _, preds = torch.max(outputs, 1) # 1 corresponds to the values and ) corresponds to the no of examples
                     accuracy += sum((preds == labels).numpy()) #adding correct preds to acc
