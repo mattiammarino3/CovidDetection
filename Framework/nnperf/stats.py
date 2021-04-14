@@ -63,6 +63,7 @@ class nnPerf():
             if show:
                 print (self.statDF.head(5))
 
+            model = csv_filepath[:-7]
             # CPU time - cpu total
             cpuInMSDF = self.statDF.loc[self.statDF["CPU_TOTAL_UOM"] == 'ms']
             cpuInUSDF = self.statDF.loc[self.statDF["CPU_TOTAL_UOM"] == 'us']
@@ -100,6 +101,8 @@ class nnPerf():
 
             retDic =  {"cpu_total_time": cpuTotalTime, "gpu_total_time": gpuTotalTime, "total_number_of_call": totalNOC,\
                        "avg_cpu_time_per_module": (cpuTotalTime/totalNOC), "avg_gpu_time_per_module": (gpuTotalTime/totalNOC)}
+        
+            return {model: [cpuTotalTime, gpuTotalTime, totalNOC, (cpuTotalTime/totalNOC), (gpuTotalTime/totalNOC)]}
         except Exception as e:
             print("error: {}".format(e.args))
         except OSError as err:
@@ -111,8 +114,9 @@ class nnPerf():
             raise
 
 # test purpose only
-#nperf_obj = nnPerf()
-#nperf_obj.getPerfStatfromCSV("ResNetKPI.csv", show=True)
+#perf_obj = nnPerf()
+#perf_obj.getPerfStatfromCSV("ResNetKPI.csv", show=True)
+
 #nperf_obj.saveAccToCSV("test.csv","a", 0, 0.99, 0.99)
 
 

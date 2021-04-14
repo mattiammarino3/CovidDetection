@@ -8,6 +8,8 @@ import torch
 import torchvision
 import numpy as np
 import torch.nn as nn
+import sys
+from sklearn.metrics import accuracy_score, f1_score
 
 from nnperf.kpiprofile import Profile
 
@@ -15,6 +17,15 @@ from PIL import Image
 from matplotlib import pyplot as plt
 
 torch.manual_seed(0)
+
+###Get the type of device
+gpu = False
+arguments = len(sys.argv) - 1
+if arguments > 0:
+    if sys.argv[1] == 'gpu' or sys.argv[1] == 'GPU':
+        gpu = True
+
+
 
 print('Using PyTorch version', torch.__version__)
 
@@ -130,35 +141,64 @@ C_models = [
 
 def show_preds():
     model.eval()  #Setting the model to evaluation mode
-    images, labels = next(iter(dl_test))
+    
+    preds = []
+    vals = []
+    with Profile(model, use_cuda=gpu, profile_memory=True) as prof:
+        #images, labels = next(iter(dl_test))
+        #outputs = model(images.to(device))
 
-    with Profile(model, use_cuda=False, profile_memory=True) as prof:
-        outputs = model(images.to(device))
+        for test_step, (images, labels) in enumerate(dl_test):
+            if test_step % 50 == 0:
+                print(test_step)
+            if torch.cuda.device_count() > 0:
+                outputs = model(images.to(device))
+                labels = labels.to(device)
+            else:                
+                outputs = model(images)
+            _, p =torch.max(outputs, 1)
+            preds.extend(p.tolist())
+            vals.extend(labels.detach().numpy().tolist())
         
     if torch.cuda.device_count() > 0:
         outputs = outputs.cpu()
         labels = labels.cpu()
 
-    _, preds=torch.max(outputs, 1)
+    
+    #_, preds=torch.max(preds, 1)
     #print(prof.display(show_events=False))
     prof.getKPIData()
+    acc = accuracy_score(preds, vals)
+    f_1 = f1_score(preds, vals, average='micro')
+    
+    
+    
+    #show_images(images, labels, preds)
+    return acc, f_1
 
-    show_images(images, labels, preds)
-
-
+output = {}
 for name, c_model in C_models:
     model = torch.load(name + '.pt')
     print('='*20)
     print("Model: ", name , " was loaded.")
     print('='*20)
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    if torch.cuda.device_count() > 1:
-        print("Let's use", torch.cuda.device_count(), "GPUs!")
-        # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
-        model = nn.DataParallel(model)
-
+    if gpu == False:
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cuda:0")
+        if torch.cuda.device_count() > 1:
+            print("Let's use", torch.cuda.device_count(), "GPUs!")
+            # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+            model = nn.DataParallel(model)
+    
     model.to(device)
 
-    show_preds()
+    acc, f1 = show_preds()
+    
+    metric = {name: [acc, f1]}
+    output.update(metric)
+
+metricData = pd.DataFrame.from_dict(output, orient="index", columns = ['Accuracy', 'F1 Score'])
+metricData.style.format("{:.2}").highlight_min(axis=0)
+metricData.head()
