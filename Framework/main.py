@@ -176,6 +176,7 @@ def show_preds():
     #show_images(images, labels, preds)
     return acc, f_1
 
+output = {}
 for name, c_model in C_models:
     model = torch.load(name + '.pt')
     print('='*20)
@@ -194,4 +195,10 @@ for name, c_model in C_models:
     model.to(device)
 
     acc, f1 = show_preds()
-    print(acc,f1)
+    
+    metric = {name: [acc, f1]}
+    output.update(metric)
+
+metricData = pd.DataFrame.from_dict(output, orient="index", columns = ['Accuracy', 'F1 Score'])
+metricData.style.format("{:.2}").highlight_min(axis=0)
+metricData.head()
