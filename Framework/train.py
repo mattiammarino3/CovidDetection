@@ -2,6 +2,8 @@
 
 ### Importing Libraries ###
 import C19_model
+from nnperf.kpiprofile import Profile
+from nnperf.stats import nnPerf
 
 import os
 import shutil
@@ -11,6 +13,7 @@ import torchvision
 import numpy as np
 import torch.nn as nn
 import splitfolders
+from sklearn.metrics import *
 
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -101,6 +104,15 @@ print('Num of test batches', len(dl_test))
 ### Data Visualization ###
 class_names = train_dataset.class_names
 
+#input: Y_pred,Y_true
+#output: accuracy, auc, precision, recall, f1-score
+def classification_metrics(Y_pred, Y_true):
+    return [accuracy_score(Y_true, Y_pred),
+            roc_auc_score(Y_true, Y_pred),
+            precision_score(Y_true, Y_pred),
+            recall_score(Y_true, Y_pred),
+            f1_score(Y_true, Y_pred)]
+
 def show_images(images,labels, preds):
     plt.figure(figsize=(8,4))
     
@@ -120,14 +132,6 @@ def show_images(images,labels, preds):
     plt.tight_layout()
     plt.show()
 
-# images, labels = next(iter(dl_train)) #Fetch the next batch of images
-# show_images(images, labels, labels)
-
-# images, labels = next(iter(dl_val))
-# show_images(images, labels, labels)
-
-# images, labels = next(iter(dl_test))
-# show_images(images, labels, labels)
 
 
 ### Creating the Model ###
@@ -151,6 +155,7 @@ def show_preds():
     prof.getKPIData()
 
     show_images(images, labels, preds)
+    acc, auc_, precision, recall, f1score = classification_metrics(preds,labels)
 
 
 ### Training the Model ###
@@ -158,6 +163,10 @@ def train(epochs, name):
     print('*'*40)
     print('Starting training model: ' + name + ' ...')
     print('*'*40)
+    global model
+    n_epochs_stop = 3
+    min_val_loss = np.Inf
+    epochs_no_improve = 0
 
     for e in range(0, epochs):
         print('='*20)
@@ -182,45 +191,60 @@ def train(epochs, name):
             optimizer.step() #Completes the gradient step by updating all the parameter values(We are using all parameters)
             train_loss += loss.item() #Loss is a tensor which can't be added to train_loss so .item() converts it to float
             
-            #Evaluating the model every 20th step
-            if train_step % 20 == 0:
-                print('Evaluating at step', train_step)
-
-                accuracy = 0
-
-                model.eval() # set model to eval phase
-
-                for val_step, (images, labels) in enumerate(dl_val):
-                    if torch.cuda.device_count() > 0:
-                        outputs = model(images.to(device))
-                        labels = labels.to(device)
-                    else:                
-                        outputs = model(images)
-                    
-                    loss = loss_fn(outputs, labels)
-                    val_loss += loss.item()
-                    if torch.cuda.device_count() > 0:
-                        outputs = outputs.cpu()
-                        labels = labels.cpu()
-
-                    _, preds = torch.max(outputs, 1) # 1 corresponds to the values and ) corresponds to the no of examples
-                    accuracy += sum((preds == labels).numpy()) #adding correct preds to acc
-
-                val_loss /= (val_step + 1) # 15 test batches so this logic gives the value for each step
-                accuracy = accuracy/len(test_dataset)
-                print(f'Validation Loss: {val_loss:.4f}, Accuracy: {accuracy:.4f}')
-
-                #show_preds()
-                model.train()
-
-                if accuracy >= 0.95:
-                    print('Performance condition satisfied, stopping..')
-                    return
-
         train_loss /= (train_step + 1)
-
         print(f'Training Loss: {train_loss:.4f}')
-    print('Training complete..')
+
+        #Evaluating the model at the end of epoch
+        print(f'Evaluating at epoch {e + 1}/{epochs}')
+        #accuracy = 0
+        y_true = []
+        y_pred = []
+        model.eval() # set model to eval phase
+        for val_step, (images, labels) in enumerate(dl_val):
+            if torch.cuda.device_count() > 0:
+                outputs = model(images.to(device))
+                labels = labels.to(device)
+            else:
+                outputs = model(images)
+
+            loss = loss_fn(outputs, labels)
+            val_loss += loss.item()
+            if torch.cuda.device_count() > 0:
+                outputs = outputs.cpu()
+                labels = labels.cpu()
+
+            _, preds = torch.max(outputs, 1) # 1 corresponds to the values and ) corresponds to the no of examples
+            #accuracy += sum((preds == labels).numpy()) #adding correct preds to acc
+            y_true = np.append(y_true, labels.numpy())
+            y_pred = np.append(y_pred, preds.numpy())
+
+        val_loss /= (val_step + 1) # 15 test batches so this logic gives the value for each step
+        #accuracy = accuracy/len(test_dataset)
+        print(f'Validation Loss: {val_loss:.4f}')
+        f1_val = f1_score(y_true, y_pred, average='weighted')
+        accuracy_val = accuracy_score(y_true, y_pred)
+        print(f"F1 Score: {f1_val:.4f}, Accuracy: {accuracy_val :.4f}")
+        C_nnPerf = nnPerf()
+        C_nnPerf.saveAccToCSV(csv_filepath=val_file, epoch=e, accuracy=accuracy_val, f1score=f1_val)
+
+        # If the validation loss is at a minimum
+        if val_loss < min_val_loss:
+            # Save the model
+            torch.save(model, name + '.pt')
+            epochs_no_improve = 0
+            min_val_loss = val_loss
+        else:
+            epochs_no_improve += 1
+
+            # Check early stopping condition
+            if epochs_no_improve == n_epochs_stop:
+                print('Training stopped early ...')
+                return
+
+        model.train()    
+            
+    print('Training completed ...')
+
 
 
 for name, c_model in C_models:
@@ -237,10 +261,13 @@ for name, c_model in C_models:
 
     model.to(device)
 
+    val_file = name + ".csv"
 
-    train(epochs=1, name=name)
+    open(val_file, "w")
 
-    torch.save(model, name + '.pt')
+    train(epochs=10, name=name)
+
+    # torch.save(model, name + '.pt')
     print('='*20)
     print("Model: ", name , " was saved.")
     print('='*20)
