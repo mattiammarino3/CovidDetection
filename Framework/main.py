@@ -148,7 +148,7 @@ def show_preds():
         #images, labels = next(iter(dl_test))
         #outputs = model(images.to(device))
 
-        for test_step, (images, labels) in enumerate(dl_test):
+      for test_step, (images, labels) in enumerate(dl_test):
             if test_step % 50 == 0:
                 print(test_step)
             if torch.cuda.device_count() > 0:
@@ -156,20 +156,21 @@ def show_preds():
                 labels = labels.to(device)
             else:                
                 outputs = model(images)
+
+            if torch.cuda.device_count() > 0:
+                outputs = outputs.cpu()
+                labels = labels.cpu()
+
             _, p =torch.max(outputs, 1)
-            preds.extend(p.tolist())
-            vals.extend(labels.detach().numpy().tolist())
-        
-    if torch.cuda.device_count() > 0:
-        outputs = outputs.cpu()
-        labels = labels.cpu()
+            preds.extend(p.numpy())
+            vals.extend(labels.numpy())
 
     
     #_, preds=torch.max(preds, 1)
     #print(prof.display(show_events=False))
     prof.getKPIData()
     acc = accuracy_score(preds, vals)
-    f_1 = f1_score(preds, vals, average='micro')
+    f_1 = f1_score(preds, vals, average='weighted')
     
     
     
