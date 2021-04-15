@@ -10,7 +10,7 @@ import numpy as np
 import torch.nn as nn
 import pandas as pd
 import sys
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, classification_report
 from nnperf.stats import nnPerf
 import csv
 from nnperf.kpiprofile import Profile
@@ -141,7 +141,7 @@ C_models = [
           ('densenet', C19_model.densenet())
         ]
 
-def show_preds():
+def get_results(model, name):
     model.eval()  #Setting the model to evaluation mode
     
     preds = []
@@ -176,6 +176,12 @@ def show_preds():
     f_1 = f1_score(preds, vals, average='weighted')
     
     
+
+    report = classification_report(vals, preds, target_names=['Normal', 'Viral', 'COVID-19','Lung_Opacity'], output_dict=True)
+
+    rep = pd.DataFrame(report).transpose()
+    className = 'Classification_' + str(name) + '.csv'
+    rep.to_csv(className, index=True)
     
     #show_images(images, labels, preds)
     return acc, f_1
@@ -199,7 +205,7 @@ for name, c_model in C_models:
     
     model.to(device)
 
-    acc, f1 = show_preds()
+    acc, f1 = get_results(model,name)
     
     metric = {name: [acc, f1, len(dl_test)*batch_size]}
     output.update(metric)
@@ -228,12 +234,8 @@ with f:
     writer.writeheader()
     for file in files:
         usage = nperf_obj.getStatfromCSV(file, show=False)
-        print("Usage ", usage)
         model = list(usage.keys())[0]
-        print("Model ", model)
         row = usage[model]
-        print("Row :", row)
-        print()
         writer.writerow({'Model': model,
         "TotalCPUTime": row[0], 
         "TotalGPUTime": row[1], 
