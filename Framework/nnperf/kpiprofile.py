@@ -186,7 +186,7 @@ class Profile(object):
                             self_cuda_memory, cuda_memory, len(self.trace_profile_events[path]))
                     
                     rows.append(kpiObject)
-        self.exportToCSV(rows)
+        return self.exportToCSV(rows)
     
     def format_measurements(self, model, name, self_cpu_total, cpu_total, self_cuda_total,
                             cuda_total, self_cpu_memory, cpu_memory, self_cuda_memory,
@@ -263,4 +263,5 @@ class Profile(object):
                                  'GPU_MEM':kpi.cuda_memory,
                                  'GPU_MEM_UOM': 'kb',
                                  'NUMBER_OF_CALLS': kpi.occurrences})
-        
+
+        return file

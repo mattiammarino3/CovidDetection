@@ -8,9 +8,11 @@ import torch
 import torchvision
 import numpy as np
 import torch.nn as nn
+import pandas as pd
 import sys
 from sklearn.metrics import accuracy_score, f1_score
-
+from nnperf.stats import nnPerf
+import csv
 from nnperf.kpiprofile import Profile
 
 from PIL import Image
@@ -148,7 +150,7 @@ def show_preds():
         #images, labels = next(iter(dl_test))
         #outputs = model(images.to(device))
 
-      for test_step, (images, labels) in enumerate(dl_test):
+        for test_step, (images, labels) in enumerate(dl_test):
             if test_step % 50 == 0:
                 print(test_step)
             if torch.cuda.device_count() > 0:
@@ -164,11 +166,12 @@ def show_preds():
             _, p =torch.max(outputs, 1)
             preds.extend(p.numpy())
             vals.extend(labels.numpy())
+        
 
     
     #_, preds=torch.max(preds, 1)
     #print(prof.display(show_events=False))
-    prof.getKPIData()
+    files.append(prof.getKPIData())
     acc = accuracy_score(preds, vals)
     f_1 = f1_score(preds, vals, average='weighted')
     
@@ -178,6 +181,7 @@ def show_preds():
     return acc, f_1
 
 output = {}
+files = []
 for name, c_model in C_models:
     model = torch.load(name + '.pt')
     print('='*20)
@@ -197,10 +201,13 @@ for name, c_model in C_models:
 
     acc, f1 = show_preds()
     
-    metric = {name: [acc, f1]}
+    metric = {name: [acc, f1, len(dl_test)*batch_size]}
     output.update(metric)
 
-metricData = pd.DataFrame.from_dict(output, orient="index", columns = ['Accuracy', 'F1 Score'])
+metricData = pd.DataFrame.from_dict(output, orient="index", columns = ['Accuracy', 'F1 Score', 'Number of Images'])
+metricData.to_csv('TestScores.csv', index=True)
+
+del metricData['Number of Images']
 
 table = metricData.plot(kind="bar")
 plt.title("Accuracy and F1 Score for Models")
@@ -208,4 +215,28 @@ plt.xlabel("Model")
 plt.ylabel("Score")
 plt.tight_layout()
 plt.savefig('TestScores.png', dpi=100)
-metricData.to_csv('TestScores.csv', index=True)
+
+
+
+#Get the stats for every file
+nperf_obj = nnPerf()
+f = open('MemoryUsage.csv', 'w')
+with f:
+    headers = ["Model", "TotalCPUTime", "TotalGPUTime", "Total Number of Calls", "Avg CPI Time per Module",
+    "Avg CPI Time per Module"]
+    writer = csv.DictWriter(f, fieldnames=headers)
+    writer.writeheader()
+    for file in files:
+        usage = nperf_obj.getStatfromCSV(file, show=False)
+        print("Usage ", usage)
+        model = list(usage.keys())[0]
+        print("Model ", model)
+        row = usage[model]
+        print("Row :", row)
+        print()
+        writer.writerow({'Model': model,
+        "TotalCPUTime": row[0], 
+        "TotalGPUTime": row[1], 
+        "Total Number of Calls": row[2], 
+        "Avg CPI Time per Module": row[3],
+        "Avg CPI Time per Module": row[4]})
