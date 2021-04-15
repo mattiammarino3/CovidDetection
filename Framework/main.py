@@ -200,5 +200,11 @@ for name, c_model in C_models:
     output.update(metric)
 
 metricData = pd.DataFrame.from_dict(output, orient="index", columns = ['Accuracy', 'F1 Score'])
-metricData.style.format("{:.2}").highlight_min(axis=0)
-metricData.head()
+
+table = metricData.plot(kind="bar")
+plt.title("Accuracy and F1 Score for Models")
+plt.xlabel("Model")
+plt.ylabel("Score")
+plt.tight_layout()
+plt.savefig('TestScores.png', dpi=100)
+metricData.to_csv('TestScores.csv', index=True)
