@@ -46,6 +46,17 @@ class nnPerf():
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
+
+    def convertMapToList(self, statMap: dict):
+        vList = []
+        kList = []
+
+        for k, v in statMap.items():
+            kList.append(k)
+            vList.append(v)
+        
+        return kList, vList
+
     """ Get performance(CPU, GPU and their memoery usage) statistics from CSV file  
     input: 
         csv_file: string -> CSV file path 
@@ -53,8 +64,10 @@ class nnPerf():
     output:
         None
     """
-    def getPerfStatfromCSV(self, nnName: str = "", csv_filepath: str = "", show=True):
+    def getPerfStatfromCSV(self, NN: str = "", csv_filepath: str = "", show=True):
         retStatMap = {}
+
+        retStatMap["NN"] = NN
         try:
             if len(self.cvs_filepath) == 0:
                 if len(csv_filepath) == 0:
@@ -101,8 +114,8 @@ class nnPerf():
                 minGPUMem = gpuMemKBMF["GPU_MEM"].min(axis = 0, skipna = True)
                 maxGPUMem = gpuMemKBMF["GPU_MEM"].max(axis = 0, skipna = True)
             
-            retStatMap["GPU_MEM_MIN"] = minCPUMem
-            retStatMap["GPU_MEM_MAX"] = maxCPUMem
+            retStatMap["GPU_MEM_MIN"] = minGPUMem
+            retStatMap["GPU_MEM_MAX"] = maxGPUMem
 
             totalNOC = self.statDF["NUMBER_OF_CALLS"].sum(axis = 0)
             retStatMap["TOTAL_NOC"] = totalNOC
@@ -127,20 +140,19 @@ class nnPerf():
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
-        return retStatMap
+        #print (retStatMap)
+        return self.convertMapToList(retStatMap)
 
     def showPerfStatGraphs(self, dataFrame):
         return 0
 
 # test purpose only
 nperf_obj = nnPerf()
-retData = nperf_obj.getPerfStatfromCSV("ResNet", "ResNetKPI.csv", show=True)
-print (retData)
-statDF = pd.DataFrame.from_dict(retData)
-print (statDF.head())
+k1, v1 = nperf_obj.getPerfStatfromCSV("ResNet", "ResNetKPI.csv", show=True)
+k2, v2 = nperf_obj.getPerfStatfromCSV("DenseNet", "DenseNetKPI.csv", show=True)
+statList = [v1, v2] 
 
-retData = nperf_obj.getPerfStatfromCSV("DenseNet", "DenseNetKPI.csv", show=True)
-statDF.concat(pd.DataFrame.from_dict(retData))
+statDF = pd.DataFrame(statList, columns=k2)
 
 print (statDF.head())
 #nperf_obj.saveAccToCSV("test.csv","a", 0, 0.99, 0.99)
