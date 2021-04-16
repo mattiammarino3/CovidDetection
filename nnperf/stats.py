@@ -53,9 +53,8 @@ class nnPerf():
     output:
         None
     """
-    def getPerfStatfromCSV(self, csv_filepath: str = "", show=True):
+    def getPerfStatfromCSV(self, nnName: str = "", csv_filepath: str = "", show=True):
         retStatMap = {}
-
         try:
             if len(self.cvs_filepath) == 0:
                 if len(csv_filepath) == 0:
@@ -131,16 +130,17 @@ class nnPerf():
         return retStatMap
 
     def showPerfStatGraphs(self, dataFrame):
-
         return 0
 
-
-
 # test purpose only
-#nperf_obj = nnPerf()
-#nperf_obj.getPerfStatfromCSV("ResNetKPI.csv", show=True)
+nperf_obj = nnPerf()
+retData = nperf_obj.getPerfStatfromCSV("ResNet", "ResNetKPI.csv", show=True)
+print (retData)
+statDF = pd.DataFrame.from_dict(retData)
+print (statDF.head())
+
+retData = nperf_obj.getPerfStatfromCSV("DenseNet", "DenseNetKPI.csv", show=True)
+statDF.concat(pd.DataFrame.from_dict(retData))
+
+print (statDF.head())
 #nperf_obj.saveAccToCSV("test.csv","a", 0, 0.99, 0.99)
-
-
-
-
