@@ -3,6 +3,9 @@ import sys
 import csv
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 class nnPerf():
     def __init__(self):
@@ -10,7 +13,7 @@ class nnPerf():
 
     def getPerfStatDF(self):
         return self.statDF
-
+    
     """ Save epoch, accuracy, f1score to CSV file  
     input: 
         csv_file: string -> CSV file path 
@@ -50,7 +53,9 @@ class nnPerf():
     output:
         None
     """
-    def getPerfStatfromCSV(self, csv_filepath: str = "", show=True) -> None:
+    def getPerfStatfromCSV(self, csv_filepath: str = "", show=True):
+        retStatMap = {}
+
         try:
             if len(self.cvs_filepath) == 0:
                 if len(csv_filepath) == 0:
@@ -69,6 +74,7 @@ class nnPerf():
             cpuTotalTimeMs = cpuInMSDF["CPU_TOTAL"].sum(axis = 0, skipna = True)
             cpuTotalTimeUs = cpuInUSDF["CPU_TOTAL"].sum(axis = 0, skipna = True)
             cpuTotalTime = cpuTotalTimeMs + cpuTotalTimeUs/1000
+            retStatMap["CPU_TOTAL_TIME"] = cpuTotalTime
 
             # GPU time - gpu total
             gpuInMSDF = self.statDF.loc[self.statDF["GPU_TOTAL_UOM"] == 'ms']
@@ -77,18 +83,30 @@ class nnPerf():
             gpuTotalTimeUs = gpuInUSDF["GPU_TOTAL"].sum(axis = 0, skipna = True)
             gpuTotalTime = gpuTotalTimeMs + gpuTotalTimeUs/1000
 
+            retStatMap["GPU_TOTAL_TIME"] = gpuTotalTime
+
             # CPU Mem - cpu mem max
             cpuMemMBMF = self.statDF.loc[self.statDF["CPU_MEM_UOM"] == 'kb']
+            minCPUMem = cpuMemMBMF["CPU_MEM"].min()
             maxCPUMem = cpuMemMBMF["CPU_MEM"].max()
+
+            retStatMap["CPU_MEM_MIN"] = minCPUMem
+            retStatMap["CPU_MEM_MAX"] = maxCPUMem
 
             # GPU Mem - cpu mem max
             gpuMemKBMF = self.statDF.loc[self.statDF["GPU_MEM_UOM"] == 'kb']
             if gpuMemKBMF.empty == True:
+                minGPUMem = 0
                 maxGPUMem = 0
             else:
+                minGPUMem = gpuMemKBMF["GPU_MEM"].min(axis = 0, skipna = True)
                 maxGPUMem = gpuMemKBMF["GPU_MEM"].max(axis = 0, skipna = True)
+            
+            retStatMap["GPU_MEM_MIN"] = minCPUMem
+            retStatMap["GPU_MEM_MAX"] = maxCPUMem
 
             totalNOC = self.statDF["NUMBER_OF_CALLS"].sum(axis = 0)
+            retStatMap["TOTAL_NOC"] = totalNOC
 
             if show:
                 print ("---------------------------------------------------------------------------------")
@@ -109,6 +127,12 @@ class nnPerf():
         except:
             print("Unexpected error:", sys.exc_info()[0])
             raise
+
+        return retStatMap
+
+    def showPerfStatGraphs(self, dataFrame):
+
+
 
 # test purpose only
 #nperf_obj = nnPerf()
