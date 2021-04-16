@@ -132,6 +132,8 @@ class nnPerf():
 
     def showPerfStatGraphs(self, dataFrame):
 
+        return 0
+
 
 
 # test purpose only
