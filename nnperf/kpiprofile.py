@@ -139,7 +139,7 @@ class Profile(object):
             )
         return "<unfinished profile>"
     
-    def getKPIData(self):
+    def getKPIData(self, method):
         
         layers = []
         rows = []
@@ -186,7 +186,7 @@ class Profile(object):
                             self_cuda_memory, cuda_memory, len(self.trace_profile_events[path]))
                     
                     rows.append(kpiObject)
-        self.exportToCSV(rows)
+        return self.exportToCSV(rows, method)
     
     def format_measurements(self, model, name, self_cpu_total, cpu_total, self_cuda_total,
                             cuda_total, self_cpu_memory, cpu_memory, self_cuda_memory,
@@ -232,9 +232,9 @@ class Profile(object):
         occurrences=occurrences,
     )
         
-    def exportToCSV(self, rows):
+    def exportToCSV(self, rows, method):
         model = rows[0].model
-        file = model + "KPI.csv"
+        file = 'csv/' + model + method + "_KPI.csv"
         f = open(file, 'w')
         with f:
             headers = ['MODULE', 'SELF_CPU_TOTAL', 'SELF_CPU_TIME_UOM', 'CPU_TOTAL', 'CPU_TOTAL_UOM', 
@@ -263,4 +263,6 @@ class Profile(object):
                                  'GPU_MEM':kpi.cuda_memory,
                                  'GPU_MEM_UOM': 'kb',
                                  'NUMBER_OF_CALLS': kpi.occurrences})
+
+        return file
         
