@@ -27,7 +27,10 @@ if arguments > 0:
     if sys.argv[1] == 'gpu' or sys.argv[1] == 'GPU':
         gpu = True
 
-
+if gpu:
+    method = '_GPU'
+else:
+    method = '_CPU'
 
 print('Using PyTorch version', torch.__version__)
 
@@ -40,7 +43,7 @@ val_dir = './model_data/val'
 test_dir = './model_data/test'
 
 if not os.path.isdir("model_data"):
-    splitfolders.ratio('./data/COVID-19_Radiography_Dataset', output="model_data", seed=1337, ratio=(.8, 0.1,0.1)) 
+    splitfolders.ratio('./data/COVID-19_Radiography_Dataset', output="model_data", seed=1337, ratio=(.8, 0.1,0.1))
 
 
 
@@ -51,21 +54,21 @@ class ChestXRayDataset(torch.utils.data.Dataset):
             images = [x for x in os.listdir(image_dirs[class_name]) if x.lower().endswith('png')]
             print(f'Found {len(images)} {class_name} examples')
             return images
-        
+
         self.images = {}
         self.class_names = ['Normal', 'Viral', 'COVID-19','Lung_Opacity']
-        
+
         for class_name in self.class_names:
             self.images[class_name] = get_images(class_name)
-            
+
         self.image_dirs = image_dirs
         self.transform = transform
-        
-    
+
+
     def __len__(self):
         return sum([len(self.images[class_name]) for class_name in self.class_names])
-    
-    
+
+
     def __getitem__(self, index):
         class_name = random.choice(self.class_names)
         index = index % len(self.images[class_name])
@@ -88,10 +91,10 @@ def getDataSet(dataset_dir):
     #Converting images to the size that the model expects
     torchvision.transforms.Resize(size=(224,224)),
     torchvision.transforms.RandomHorizontalFlip(), #A RandomHorizontalFlip to augment our data
-    torchvision.transforms.ToTensor(), #Converting to tensor    
+    torchvision.transforms.ToTensor(), #Converting to tensor
     torchvision.transforms.Normalize(mean = [0.485, 0.456, 0.406],
                                     std = [0.229, 0.224, 0.225]) #Normalizing the data using the Imagenet pretrianed model
-    
+
     ])
     return ChestXRayDataset(dataset_dirs, data_transform)
 
@@ -117,7 +120,7 @@ class_names = train_dataset.class_names
 
 def show_images(images,labels, preds):
     plt.figure(figsize=(8,4))
-    
+
     for i, image in enumerate(images):
         plt.subplot(1, 6, i + 1, xticks = [], yticks =[]) # x & y ticks are set to blank
         image = image.numpy().transpose((1, 2, 0)) # Channel first then height and width
@@ -126,9 +129,9 @@ def show_images(images,labels, preds):
         image = image * std + mean
         image = np.clip(image, 0., 1.)
         plt.imshow(image)
-        
+
         col = 'green' if preds[i] == labels[i] else 'red'
-        
+
         plt.xlabel(f'{class_names[int(labels[i].numpy())]}')
         plt.ylabel(f'{class_names[int(preds[i].numpy())]}', color=col)
     plt.tight_layout()
@@ -137,13 +140,13 @@ def show_images(images,labels, preds):
 
 ### Loading the Model ###
 C_models = [
-          ('resnet18', C19_model.resnet18()), 
+          ('resnet18', C19_model.resnet18()),
           ('densenet', C19_model.densenet())
         ]
-
+files = []
 def get_results(model, name):
     model.eval()  #Setting the model to evaluation mode
-    
+
     preds = []
     vals = []
     with Profile(model, use_cuda=gpu, profile_memory=True) as prof:
@@ -156,7 +159,7 @@ def get_results(model, name):
             if torch.cuda.device_count() > 0:
                 outputs = model(images.to(device))
                 labels = labels.to(device)
-            else:                
+            else:
                 outputs = model(images)
 
             if torch.cuda.device_count() > 0:
@@ -166,30 +169,30 @@ def get_results(model, name):
             _, p =torch.max(outputs, 1)
             preds.extend(p.numpy())
             vals.extend(labels.numpy())
-        
 
-    
+
+
     #_, preds=torch.max(preds, 1)
     #print(prof.display(show_events=False))
-    files.append(prof.getKPIData())
+    files.append(prof.getKPIData(method))
     acc = accuracy_score(preds, vals)
     f_1 = f1_score(preds, vals, average='weighted')
-    
-    
+
+
 
     report = classification_report(vals, preds, target_names=['Normal', 'Viral', 'COVID-19','Lung_Opacity'], output_dict=True)
 
     rep = pd.DataFrame(report).transpose()
-    className = 'Classification_' + str(name) + '.csv'
+    className = 'csv/Classification_' + str(name) + method + '.csv'
     rep.to_csv(className, index=True)
-    
+
     #show_images(images, labels, preds)
     return acc, f_1
 
 output = {}
-files = []
+
 for name, c_model in C_models:
-    model = torch.load(name + '.pt')
+    model = torch.load("pt_files/"+name+".pt")
     print('='*20)
     print("Model: ", name , " was loaded.")
     print('='*20)
@@ -202,16 +205,16 @@ for name, c_model in C_models:
             print("Let's use", torch.cuda.device_count(), "GPUs!")
             # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
             model = nn.DataParallel(model)
-    
+
     model.to(device)
 
     acc, f1 = get_results(model,name)
-    
+
     metric = {name: [acc, f1, len(dl_test)*batch_size]}
     output.update(metric)
 
 metricData = pd.DataFrame.from_dict(output, orient="index", columns = ['Accuracy', 'F1 Score', 'Number of Images'])
-metricData.to_csv('TestScores.csv', index=True)
+metricData.to_csv('csv/TestScores.csv', index=True)
 
 del metricData['Number of Images']
 
@@ -220,25 +223,26 @@ plt.title("Accuracy and F1 Score for Models")
 plt.xlabel("Model")
 plt.ylabel("Score")
 plt.tight_layout()
-plt.savefig('TestScores.png', dpi=100)
+plt.savefig('csv/TestScores.png', dpi=100)
 
 
 
 #Get the stats for every file
 nperf_obj = nnPerf()
-f = open('MemoryUsage.csv', 'w')
+
+f = open('csv/MemoryUsage' + method + '.csv', 'w')
 with f:
-    headers = ["Model", "TotalCPUTime", "TotalGPUTime", "Total Number of Calls", "Avg CPI Time per Module",
-    "Avg CPI Time per Module"]
+    headers = ["Model", 'CPU TOTAL TIME', 'GPU TOTAL TIME', 'CPU MEM MIN', 'CPU MEM MAX', 'GPU MEM MIN', 'GPU MEM MAX', 'TOTAL CALLS']
     writer = csv.DictWriter(f, fieldnames=headers)
     writer.writeheader()
     for file in files:
-        usage = nperf_obj.getStatfromCSV(file, show=False)
-        model = list(usage.keys())[0]
-        row = usage[model]
-        writer.writerow({'Model': model,
-        "TotalCPUTime": row[0], 
-        "TotalGPUTime": row[1], 
-        "Total Number of Calls": row[2], 
-        "Avg CPI Time per Module": row[3],
-        "Avg CPI Time per Module": row[4]})
+        nn = file[4:-12]
+        k, v= nperf_obj.getPerfStatfromCSV(NN = nn, csv_filepath = file, show=False)
+        writer.writerow({'Model': nn,
+        'CPU TOTAL TIME': v[1],
+        'GPU TOTAL TIME': v[2],
+        'CPU MEM MIN': v[3],
+        'CPU MEM MAX': v[4],
+        'GPU MEM MIN': v[5],
+        'GPU MEM MAX': v[6],
+        'TOTAL CALLS': v[7]})

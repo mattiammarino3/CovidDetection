@@ -13,14 +13,14 @@ class nnPerf():
 
     def getPerfStatDF(self):
         return self.statDF
-    
-    """ Save epoch, accuracy, f1score to CSV file  
-    input: 
-        csv_file: string -> CSV file path 
+
+    """ Save epoch, accuracy, f1score to CSV file
+    input:
+        csv_file: string -> CSV file path
         epoch: int -> epoch
         mode: str -> writing mode: default "a"
-        accuracy: float -> accuracy 
-        f1score: float -> f1score 
+        accuracy: float -> accuracy
+        f1score: float -> f1score
     output:
         None
     """
@@ -54,12 +54,12 @@ class nnPerf():
         for k, v in statMap.items():
             kList.append(k)
             vList.append(v)
-        
+
         return kList, vList
 
-    """ Get performance(CPU, GPU and their memoery usage) statistics from CSV file  
-    input: 
-        csv_file: string -> CSV file path 
+    """ Get performance(CPU, GPU and their memoery usage) statistics from CSV file
+    input:
+        csv_file: string -> CSV file path
         show: bool -> show statistics data (mostly debugging purposes)
     output:
         None
@@ -113,7 +113,7 @@ class nnPerf():
             else:
                 minGPUMem = gpuMemKBMF["GPU_MEM"].min(axis = 0, skipna = True)
                 maxGPUMem = gpuMemKBMF["GPU_MEM"].max(axis = 0, skipna = True)
-            
+
             retStatMap["GPU_MEM_MIN"] = minGPUMem
             retStatMap["GPU_MEM_MAX"] = maxGPUMem
 
@@ -140,19 +140,22 @@ class nnPerf():
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
-        #print (retStatMap)
+
         return self.convertMapToList(retStatMap)
+
 
     def showPerfStatGraphs(self, dataFrame):
         return 0
 
 # test purpose only
+'''
 nperf_obj = nnPerf()
 k1, v1 = nperf_obj.getPerfStatfromCSV("ResNet", "ResNetKPI.csv", show=True)
 k2, v2 = nperf_obj.getPerfStatfromCSV("DenseNet", "DenseNetKPI.csv", show=True)
-statList = [v1, v2] 
+statList = [v1, v2]
 
 statDF = pd.DataFrame(statList, columns=k2)
 
 print (statDF.head())
 #nperf_obj.saveAccToCSV("test.csv","a", 0, 0.99, 0.99)
+'''
