@@ -230,14 +230,13 @@ plt.savefig('csv/TestScores.png', dpi=100)
 #Get the stats for every file
 nperf_obj = nnPerf()
 
-
 f = open('csv/MemoryUsage' + method + '.csv', 'w')
 with f:
     headers = ["Model", 'CPU TOTAL TIME', 'GPU TOTAL TIME', 'CPU MEM MIN', 'CPU MEM MAX', 'GPU MEM MIN', 'GPU MEM MAX', 'TOTAL CALLS']
     writer = csv.DictWriter(f, fieldnames=headers)
     writer.writeheader()
     for file in files:
-        nn = file[4:-7]
+        nn = file[4:-12]
         k, v= nperf_obj.getPerfStatfromCSV(NN = nn, csv_filepath = file, show=False)
         writer.writerow({'Model': nn,
         'CPU TOTAL TIME': v[1],
