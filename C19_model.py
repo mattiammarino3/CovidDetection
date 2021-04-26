@@ -46,6 +46,20 @@ class densenet(DLH_model):
 
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
 
+class resnet50(DLH_model):
+   def __init__(self):
+      self.model = torchvision.models.resnet50(pretrained=True)
+      #Changing the last fc to 4 output features
+      self.model.fc = nn.Sequential(
+         nn.Linear(2048, 64),
+         nn.ReLU(inplace=True),
+         nn.Linear(64, 4)
+      )
+      
+      self.loss = torch.nn.CrossEntropyLoss()
+
+      self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
+
 class alexnet(DLH_model):
    def __init__(self):
       self.model = torchvision.models.alexnet(pretrained=True)
@@ -82,4 +96,14 @@ class googlenet(DLH_model):
       #Changing the last fc to 4 output features
       self.model.fc = nn.Linear(in_features=1024, out_features=4)
       self.loss = torch.nn.CrossEntropyLoss()
+      self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
+
+class vgg19(DLH_model):
+   def __init__(self):
+      self.model = torchvision.models.vgg19(pretrained=True)
+      #Changing the last fc to 4 output features
+      self.model.fc = torch.nn.Linear(in_features=4096, out_features=4)
+      
+      self.loss = torch.nn.CrossEntropyLoss()
+
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)

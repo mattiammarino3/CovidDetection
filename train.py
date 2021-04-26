@@ -144,8 +144,13 @@ def show_images(images,labels, preds):
 
 ### Creating the Model ###
 C_models = [
-          ('resnet18', C19_model.resnet18()), 
-          ('densenet', C19_model.densenet())
+          #('resnet18', C19_model.resnet18()),
+          #('densenet', C19_model.densenet()),
+          ('resnet50', C19_model.resnet50()),
+          ('alexnet', C19_model.alexnet()),
+          ('mobilenet', C19_model.mobilenet()),
+          ('googlenet', C19_model.googlenet()),
+          ('vgg19', C19_model.vgg19())
         ]
 
 def show_preds():
@@ -238,7 +243,7 @@ def train(epochs, name):
         # If the validation loss is at a minimum
         if val_loss < min_val_loss:
             # Save the model
-            torch.save(model, name + '.pt')
+            torch.save(model, "pt_files/"+name+".pt")
             epochs_no_improve = 0
             min_val_loss = val_loss
         else:
@@ -252,42 +257,6 @@ def train(epochs, name):
         model.train()    
             
     print('Training completed ...')
-
-            # #Evaluating the model every 20th step
-            # if train_step % 20 == 0:
-            #     print('Evaluating at step', train_step)
-
-            #     accuracy = 0
-
-            #     model.eval() # set model to eval phase
-
-            #     for val_step, (images, labels) in enumerate(dl_val):
-            #         if torch.cuda.device_count() > 0:
-            #             outputs = model(images.to(device))
-            #             labels = labels.to(device)
-            #         else:                
-            #             outputs = model(images)
-                    
-            #         loss = loss_fn(outputs, labels)
-            #         val_loss += loss.item()
-            #         if torch.cuda.device_count() > 0:
-            #             outputs = outputs.cpu()
-            #             labels = labels.cpu()
-
-            #         _, preds = torch.max(outputs, 1) # 1 corresponds to the values and ) corresponds to the no of examples
-            #         accuracy += sum((preds == labels).numpy()) #adding correct preds to acc
-
-            #     val_loss /= (val_step + 1) # 15 test batches so this logic gives the value for each step
-            #     accuracy = accuracy/len(test_dataset)
-            #     print(f'Validation Loss: {val_loss:.4f}, Accuracy: {accuracy:.4f}')
-
-            #     #show_preds()
-            #     model.train()
-
-            #     if accuracy >= 0.95:
-            #         print('Performance condition satisfied, stopping..')
-            #         return
-
 
 for name, c_model in C_models:
     model = c_model.get_model()
@@ -303,8 +272,8 @@ for name, c_model in C_models:
 
     model.to(device)
 
-    val_file = name + ".csv"
-
+    val_file = 'csv/Validation_' + name + '.csv'
+    
     open(val_file, "w")
 
     train(epochs=10, name=name)
