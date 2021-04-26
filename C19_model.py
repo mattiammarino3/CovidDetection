@@ -45,3 +45,41 @@ class densenet(DLH_model):
       self.loss = torch.nn.CrossEntropyLoss()
 
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
+
+class alexnet(DLH_model):
+   def __init__(self):
+      self.model = torchvision.models.alexnet(pretrained=True)
+      #Changing the last fc to 4 output features
+      self.model.classifier = nn.Sequential(
+             nn.Dropout(p=0.5, inplace=False),
+             nn.Linear(in_features=9216, out_features=4096, bias=True),
+             nn.ReLU(inplace=True),
+             nn.Dropout(p=0.5, inplace=False),
+             nn.Linear(in_features=4096, out_features=1024, bias=True),
+             nn.ReLU(inplace=True),
+             nn.Linear(in_features=1024, out_features=4, bias=True)
+        )
+      
+      self.loss = torch.nn.CrossEntropyLoss()
+
+      self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
+
+class mobilenet(DLH_model):
+   def __init__(self):
+      self.model = torchvision.models.mobilenet_v2(pretrained=True)
+      #Changing the last fc to 4 output features
+      self.model.classifier = nn.Sequential(
+          nn.Dropout(p=0.2, inplace=False),
+          nn.Linear(in_features=1280, out_features=4, bias=True)
+        )
+
+      self.loss = torch.nn.CrossEntropyLoss()
+      self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
+
+class googlenet(DLH_model):
+   def __init__(self):
+      self.model = torchvision.models.googlenet(pretrained=True)
+      #Changing the last fc to 4 output features
+      self.model.fc = nn.Linear(in_features=1024, out_features=4)
+      self.loss = torch.nn.CrossEntropyLoss()
+      self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
