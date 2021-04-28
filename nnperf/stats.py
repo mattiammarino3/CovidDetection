@@ -67,6 +67,11 @@ class nnPerf():
     def getPerfStatfromCSV(self, NN: str = "", csv_filepath: str = "", show=True):
         retStatMap = {}
 
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.width', None)
+        pd.set_option('display.max_colwidth', -1)
+
         retStatMap["NN"] = NN
         try:
             if len(self.cvs_filepath) == 0:
@@ -78,7 +83,7 @@ class nnPerf():
             self.statDF = pd.read_csv(csv_filepath, header=0) #, skiprows=[0])
 
             if show:
-                print (self.statDF.head(5))
+                print (self.statDF)
 
             # CPU time - cpu total
             cpuInMSDF = self.statDF.loc[self.statDF["CPU_TOTAL_UOM"] == 'ms']

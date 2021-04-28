@@ -53,6 +53,7 @@ class Profile(object):
         self.exited = False
         self.traces = ()
         self.trace_profile_events = defaultdict(list)
+        self.num_params = 0
 
     def __enter__(self):
         if not self.enabled:
@@ -61,6 +62,7 @@ class Profile(object):
             raise RuntimeError("Profiler is not reentrant")
         self.entered = True
         self._forwards = {}  # store the original forward functions
+        self.num_params = self._count_parameters()
         self.traces = tuple(map(self._hook_trace, walk_modules(self._model)))
         return self
 
@@ -76,6 +78,15 @@ class Profile(object):
 
     def __call__(self, *args, **kwargs):
         return self._model(*args, **kwargs)
+
+    def _count_parameters(self):
+        """
+        mod_list = (list(self._model.named_children()))
+        for c,p in enumerate(self._model.parameters()):
+            if p.requires_grad:
+                print ("{} -> {}".format(c, p.numel()))
+        """
+        return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
     def _hook_trace(self, trace):
         [path, leaf, module] = trace
@@ -104,9 +115,6 @@ class Profile(object):
 
                 event_list = prof.function_events
                 
-                
-                # PyTorch up until version 1.7 exposes this method. From PyTorch 1.8 onwards, 
-                # it is called via EventList._build_tree at the end of the context manager.
                 if hasattr(event_list, "populate_cpu_children"):
                     event_list.populate_cpu_children()
                 # each profile call should be contained in its own list
@@ -240,7 +248,7 @@ class Profile(object):
             headers = ['MODULE', 'SELF_CPU_TOTAL', 'SELF_CPU_TIME_UOM', 'CPU_TOTAL', 'CPU_TOTAL_UOM', 
                        'SELF_GPU_TOTAL', 'SELF_GPU_UOM', 'GPU_TOTAL', 'GPU_TOTAL_UOM',
                        'SELF_CPU MEM','SELF_CPU_MEM_UOM', 'CPU_MEM','CPU_MEM_UOM','SELF_GPU_MEM',
-                       'SELF_GPU_MEM_UOM','GPU_MEM','GPU_MEM_UOM','NUMBER_OF_CALLS']
+                       'SELF_GPU_MEM_UOM','GPU_MEM','GPU_MEM_UOM','NUMBER_OF_CALLS', 'NUMBER_OF_PARAMS']
             writer = csv.DictWriter(f, fieldnames=headers)
             writer.writeheader()
             for i in range(len(rows)):
@@ -262,7 +270,9 @@ class Profile(object):
                                  'SELF_GPU_MEM_UOM':'kb',
                                  'GPU_MEM':kpi.cuda_memory,
                                  'GPU_MEM_UOM': 'kb',
-                                 'NUMBER_OF_CALLS': kpi.occurrences})
+                                 'NUMBER_OF_CALLS': kpi.occurrences,
+                                 'NUMBER_OF_PARAMS' : self.num_params
+                                 })
 
         return file
         

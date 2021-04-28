@@ -139,9 +139,14 @@ def show_images(images,labels, preds):
 
 
 ### Loading the Model ###
+          #('mobilenet', C19_model.mobilenet()),
 C_models = [
           ('resnet18', C19_model.resnet18()),
-          ('densenet', C19_model.densenet())
+          ('densenet', C19_model.densenet()),
+          ('resnet50', C19_model.resnet50()),
+          ('alexnet', C19_model.alexnet()),
+          ('googlenet', C19_model.googlenet()),
+          ('vgg19', C19_model.vgg19())
         ]
 files = []
 def get_results(model, name):
@@ -214,7 +219,7 @@ for name, c_model in C_models:
     output.update(metric)
 
 metricData = pd.DataFrame.from_dict(output, orient="index", columns = ['Accuracy', 'F1 Score', 'Number of Images'])
-metricData.to_csv('csv/TestScores.csv', index=True)
+metricData.to_csv('csv/TestScores' + method + '.csv', index=True)
 
 del metricData['Number of Images']
 
@@ -223,7 +228,7 @@ plt.title("Accuracy and F1 Score for Models")
 plt.xlabel("Model")
 plt.ylabel("Score")
 plt.tight_layout()
-plt.savefig('csv/TestScores.png', dpi=100)
+plt.savefig('csv/TestScores' + method + '.png', dpi=100)
 
 
 
