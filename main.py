@@ -147,7 +147,8 @@ C_models = [
           ('alexnet', C19_model.alexnet()),
           ('mobilenet', C19_model.mobilenet()),
           ('googlenet', C19_model.googlenet()),
-          ('vgg19', C19_model.vgg19())
+          ('vgg19', C19_model.vgg19()),
+          ('squeezenet', C19_model.squeezenet())
         ]
 files = []
 def get_results(model, name):

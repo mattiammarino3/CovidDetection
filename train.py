@@ -148,9 +148,10 @@ C_models = [
           #('densenet', C19_model.densenet()),
           #('resnet50', C19_model.resnet50()),
           #('alexnet', C19_model.alexnet()),
-          ('mobilenet', C19_model.mobilenet())#,
+          #('mobilenet', C19_model.mobilenet())#,
           #('googlenet', C19_model.googlenet()),
           #('vgg19', C19_model.vgg19())
+          ('squeezenet', C19_model.squeezenet())
         ]
 
 def show_preds():
