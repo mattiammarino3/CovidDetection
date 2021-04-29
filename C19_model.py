@@ -77,6 +77,20 @@ class alexnet(DLH_model):
       self.loss = torch.nn.CrossEntropyLoss()
 
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
+	 
+class squeezenet(DLH_model):
+   def __init__(self):
+      self.model = torchvision.models.squeezenet1_0(pretrained=True)
+      #Changing the last fc to 4 output features
+      self.model.classifier = nn.Sequential(
+		nn.Dropout(p=0.5, inplace=False),
+		nn.Conv2d(512, 4, kernel_size=(1, 1), stride=(1, 1)),
+		nn.ReLU(inplace=True),
+		nn.AdaptiveAvgPool2d(output_size=(1, 1))
+		)
+
+      self.loss = torch.nn.CrossEntropyLoss()
+      self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
 
 class mobilenet(DLH_model):
    def __init__(self):
