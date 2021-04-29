@@ -125,6 +125,8 @@ class nnPerf():
             totalNOC = self.statDF["NUMBER_OF_CALLS"].sum(axis = 0)
             retStatMap["TOTAL_NOC"] = totalNOC
 
+            retStatMap["PARAMS"] = self.statDF["NUMBER_OF_PARAMS"].max(axis = 0, skipna = True)
+
             if show:
                 print ("---------------------------------------------------------------------------------")
                 print ("cpu_total_time = {:.2f} ms, gpu_total_time = {} ms".format(cpuTotalTime, gpuTotalTime))

@@ -146,11 +146,11 @@ def show_images(images,labels, preds):
 C_models = [
           #('resnet18', C19_model.resnet18()),
           #('densenet', C19_model.densenet()),
-          ('resnet50', C19_model.resnet50()),
-          ('alexnet', C19_model.alexnet()),
-          ('mobilenet', C19_model.mobilenet()),
-          ('googlenet', C19_model.googlenet()),
-          ('vgg19', C19_model.vgg19())
+          #('resnet50', C19_model.resnet50()),
+          #('alexnet', C19_model.alexnet()),
+          ('mobilenet', C19_model.mobilenet())#,
+          #('googlenet', C19_model.googlenet()),
+          #('vgg19', C19_model.vgg19())
         ]
 
 def show_preds():
@@ -180,6 +180,7 @@ def train(epochs, name):
     n_epochs_stop = 3
     min_val_loss = np.Inf
     epochs_no_improve = 0
+    #print(model)
 
     for e in range(0, epochs):
         print('='*20)

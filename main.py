@@ -139,12 +139,13 @@ def show_images(images,labels, preds):
 
 
 ### Loading the Model ###
-          #('mobilenet', C19_model.mobilenet()),
+          #
 C_models = [
           ('resnet18', C19_model.resnet18()),
           ('densenet', C19_model.densenet()),
           ('resnet50', C19_model.resnet50()),
           ('alexnet', C19_model.alexnet()),
+          ('mobilenet', C19_model.mobilenet()),
           ('googlenet', C19_model.googlenet()),
           ('vgg19', C19_model.vgg19())
         ]
@@ -179,7 +180,7 @@ def get_results(model, name):
 
     #_, preds=torch.max(preds, 1)
     #print(prof.display(show_events=False))
-    files.append(prof.getKPIData(method))
+    files.append(prof.getKPIData(method, name))
     acc = accuracy_score(preds, vals)
     f_1 = f1_score(preds, vals, average='weighted')
 
@@ -237,7 +238,7 @@ nperf_obj = nnPerf()
 
 f = open('csv/MemoryUsage' + method + '.csv', 'w')
 with f:
-    headers = ["Model", 'CPU TOTAL TIME', 'GPU TOTAL TIME', 'CPU MEM MIN', 'CPU MEM MAX', 'GPU MEM MIN', 'GPU MEM MAX', 'TOTAL CALLS']
+    headers = ["Model", 'CPU TOTAL TIME', 'GPU TOTAL TIME', 'CPU MEM MIN', 'CPU MEM MAX', 'GPU MEM MIN', 'GPU MEM MAX', 'TOTAL CALLS', 'PARAMS']
     writer = csv.DictWriter(f, fieldnames=headers)
     writer.writeheader()
     for file in files:
@@ -250,4 +251,5 @@ with f:
         'CPU MEM MAX': v[4],
         'GPU MEM MIN': v[5],
         'GPU MEM MAX': v[6],
-        'TOTAL CALLS': v[7]})
+        'TOTAL CALLS': v[7],
+        'PARAMS': v[8]})

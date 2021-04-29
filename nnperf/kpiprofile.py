@@ -147,7 +147,7 @@ class Profile(object):
             )
         return "<unfinished profile>"
     
-    def getKPIData(self, method):
+    def getKPIData(self, method, modelname):
         
         layers = []
         rows = []
@@ -188,7 +188,7 @@ class Profile(object):
                     if has_self_cuda_time:
                         self_cuda_total = sum([getattr(e, "self_cuda_time_total", 0) for e in events])
                 
-                    kpiObject = self.format_measurements(current_layers[0], name, sum([e.self_cpu_time_total for e in events]),
+                    kpiObject = self.format_measurements(modelname, name, sum([e.self_cpu_time_total for e in events]),
                                              sum([e.cpu_time_total for e in events]), self_cuda_total,
                             sum([e.cuda_time_total for e in events]), self_cpu_memory, cpu_memory, 
                             self_cuda_memory, cuda_memory, len(self.trace_profile_events[path]))
