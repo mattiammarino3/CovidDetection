@@ -9,22 +9,23 @@ import torch.nn as nn
 from PIL import Image
 from matplotlib import pyplot as plt
 
-# abstract model
+# abstract model with methods to access model, loss function, and optimizer defined in _init_
 class DLH_model(object):
    def __init__(self):
       self.model = null
       self.loss = null
       self.optimizer = null
-
+   # Access model
    def get_model(self):
       return self.model
-
+   # Access loss function
    def get_loss(self):
       return self.loss
-
+   # Access optimizer
    def get_optimizer(self):
       return self.optimizer
 
+#individual class for each model to define pre-trained model, parameters, loss function, and optimizer in _init_
 class resnet18(DLH_model):
    def __init__(self):
       self.model = torchvision.models.resnet18(pretrained=True)
@@ -34,6 +35,7 @@ class resnet18(DLH_model):
       self.loss = torch.nn.CrossEntropyLoss()
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
 
+#individual class for each model to define pre-trained model, parameters, loss function, and optimizer in _init_
 class densenet(DLH_model):
    def __init__(self):
       self.model = torchvision.models.densenet121(pretrained=True)
@@ -43,6 +45,7 @@ class densenet(DLH_model):
       self.loss = torch.nn.CrossEntropyLoss()
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
 
+#individual class for each model to define pre-trained model, parameters, loss function, and optimizer in _init_
 class resnet50(DLH_model):
    def __init__(self):
       self.model = torchvision.models.resnet50(pretrained=True)
@@ -56,6 +59,7 @@ class resnet50(DLH_model):
       self.loss = torch.nn.CrossEntropyLoss()
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
 
+#individual class for each model to define pre-trained model, parameters, loss function, and optimizer in _init_
 class alexnet(DLH_model):
    def __init__(self):
       self.model = torchvision.models.alexnet(pretrained=True)
@@ -73,6 +77,7 @@ class alexnet(DLH_model):
       self.loss = torch.nn.CrossEntropyLoss()
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
 	 
+#individual class for each model to define pre-trained model, parameters, loss function, and optimizer in _init_
 class squeezenet(DLH_model):
    def __init__(self):
       self.model = torchvision.models.squeezenet1_0(pretrained=True)
@@ -87,6 +92,7 @@ class squeezenet(DLH_model):
       self.loss = torch.nn.CrossEntropyLoss()
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
 
+#individual class for each model to define pre-trained model, parameters, loss function, and optimizer in _init_
 class mobilenet(DLH_model):
    def __init__(self):
       self.model = torchvision.models.mobilenet_v2(pretrained=True)
@@ -99,6 +105,7 @@ class mobilenet(DLH_model):
       self.loss = torch.nn.CrossEntropyLoss()
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
 
+#individual class for each model to define pre-trained model, parameters, loss function, and optimizer in _init_
 class googlenet(DLH_model):
    def __init__(self):
       self.model = torchvision.models.googlenet(pretrained=True)
@@ -108,6 +115,7 @@ class googlenet(DLH_model):
       self.loss = torch.nn.CrossEntropyLoss()
       self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-5)
 
+#individual class for each model to define pre-trained model, parameters, loss function, and optimizer in _init_
 class vgg19(DLH_model):
    def __init__(self):
       self.model = torchvision.models.vgg19(pretrained=True)
