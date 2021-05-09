@@ -147,6 +147,7 @@ class Profile(object):
             )
         return "<unfinished profile>"
     
+    #Gets the system resource usage for each model using the Python profiler
     def getKPIData(self, method, modelname):
         
         layers = []
@@ -196,6 +197,7 @@ class Profile(object):
                     rows.append(kpiObject)
         return self.exportToCSV(rows, method)
     
+    #Formats the KPI measurements into our format needed in the CSV files
     def format_measurements(self, model, name, self_cpu_total, cpu_total, self_cuda_total,
                             cuda_total, self_cpu_memory, cpu_memory, self_cuda_memory,
                             cuda_memory, occurrences):
@@ -239,7 +241,8 @@ class Profile(object):
         cuda_memory=cuda_memory,
         occurrences=occurrences,
     )
-        
+    
+    #Exports the system resources to a CSV file for us to use
     def exportToCSV(self, rows, method):
         model = rows[0].model
         file = 'csv/' + model + method + "_KPI.csv"

@@ -198,6 +198,7 @@ def get_results(model, name):
 
 output = {}
 
+#Running through each of the models and getting their results
 for name, c_model in C_models:
     model = torch.load("pt_files/"+name+".pt")
     print('='*20)
