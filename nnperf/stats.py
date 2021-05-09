@@ -7,6 +7,10 @@ import seaborn as sns
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+"""
+generating statistical data from KPI CSV files
+"""
+
 class nnPerf():
     def __init__(self):
         self.cvs_filepath = ""

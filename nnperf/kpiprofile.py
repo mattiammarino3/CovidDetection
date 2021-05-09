@@ -151,7 +151,6 @@ class Profile(object):
                 profile_memory=self.profile_memory,
             )
         return "<unfinished profile>"
-<<<<<<< HEAD
 
     """
 
@@ -161,10 +160,7 @@ class Profile(object):
         method: string
         model name: string
     """
-=======
-    
     #Gets the system resource usage for each model using the Python profiler
->>>>>>> 6e6cc2ddb5fcfa51d23015ec84df5d5b4147f46f
     def getKPIData(self, method, modelname):
         layers = []
         rows = []
@@ -212,8 +208,6 @@ class Profile(object):
 
                     rows.append(kpiObject)
         return self.exportToCSV(rows, method)
-<<<<<<< HEAD
-
     """
     converting measurement units and store the result into the data structure
     params:
@@ -228,10 +222,7 @@ class Profile(object):
         self_memory: float
         occurences: int
     """
-=======
-    
     #Formats the KPI measurements into our format needed in the CSV files
->>>>>>> 6e6cc2ddb5fcfa51d23015ec84df5d5b4147f46f
     def format_measurements(self, model, name, self_cpu_total, cpu_total, self_cuda_total,
                             cuda_total, self_cpu_memory, cpu_memory, self_cuda_memory,
                             cuda_memory, occurrences):
@@ -275,8 +266,6 @@ class Profile(object):
         cuda_memory=cuda_memory,
         occurrences=occurrences,
     )
-<<<<<<< HEAD
-
     """
     exporting the stored measurment data to CSV
 
@@ -285,8 +274,6 @@ class Profile(object):
         method: string
 
     """
-=======
-    
     #Exports the system resources to a CSV file for us to use
 >>>>>>> 6e6cc2ddb5fcfa51d23015ec84df5d5b4147f46f
     def exportToCSV(self, rows, method):
