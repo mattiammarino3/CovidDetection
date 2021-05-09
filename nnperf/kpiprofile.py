@@ -79,15 +79,17 @@ class Profile(object):
     def __call__(self, *args, **kwargs):
         return self._model(*args, **kwargs)
 
+    """
+    counting the number of parmeters in the model
+    parameter: none
+    """
     def _count_parameters(self):
-        """
-        mod_list = (list(self._model.named_children()))
-        for c,p in enumerate(self._model.parameters()):
-            if p.requires_grad:
-                print ("{} -> {}".format(c, p.numel()))
-        """
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
+    """
+    hooking function for replacing orgianl forward functions with profiling function
+    parameter: list of module
+    """
     def _hook_trace(self, trace):
         [path, leaf, module] = trace
         if (self.paths is not None and path in self.paths) or (
@@ -114,7 +116,7 @@ class Profile(object):
                         res = _forward(*args, **kwargs)
 
                 event_list = prof.function_events
-                
+
                 if hasattr(event_list, "populate_cpu_children"):
                     event_list.populate_cpu_children()
                 # each profile call should be contained in its own list
@@ -124,6 +126,9 @@ class Profile(object):
             module.forward = wrap_forward
         return trace
 
+    """
+    removing the hooking function
+    """
     def _remove_hook_trace(self, trace):
         [path, leaf, module] = trace
         if (self.paths is not None and path in self.paths) or (
@@ -146,9 +151,16 @@ class Profile(object):
                 profile_memory=self.profile_memory,
             )
         return "<unfinished profile>"
-    
+
+    """
+
+        collecting  measured KPI values
+        parameter:
+
+        method: string
+        model name: string
+    """
     def getKPIData(self, method, modelname):
-        
         layers = []
         rows = []
         for trace in self.traces:
@@ -162,7 +174,7 @@ class Profile(object):
                 if depth == len(path) and (
                     (self.paths is None and leaf) or (self.paths is not None and path in self.paths)
                 ):
-                    
+
                     self_cpu_memory = None
                     has_self_cpu_memory = any(hasattr(e, "self_cpu_memory_usage") for e in events)
                     if has_self_cpu_memory:
@@ -181,21 +193,35 @@ class Profile(object):
                     has_cuda_memory = any(hasattr(e, "cuda_memory_usage") for e in events)
                     if has_cuda_memory:
                         cuda_memory = sum([getattr(e, "cuda_memory_usage", 0) for e in events])
-                
+
                     # self CUDA time supported in torch >= 1.7
                     self_cuda_total = None
                     has_self_cuda_time = any(hasattr(e, "self_cuda_time_total") for e in events)
                     if has_self_cuda_time:
                         self_cuda_total = sum([getattr(e, "self_cuda_time_total", 0) for e in events])
-                
+
                     kpiObject = self.format_measurements(modelname, name, sum([e.self_cpu_time_total for e in events]),
                                              sum([e.cpu_time_total for e in events]), self_cuda_total,
-                            sum([e.cuda_time_total for e in events]), self_cpu_memory, cpu_memory, 
+                            sum([e.cuda_time_total for e in events]), self_cpu_memory, cpu_memory,
                             self_cuda_memory, cuda_memory, len(self.trace_profile_events[path]))
-                    
+
                     rows.append(kpiObject)
         return self.exportToCSV(rows, method)
-    
+
+    """
+    converting measurement units and store the result into the data structure
+    params:
+        model: string
+        name: string
+        self_cpu_total: float
+        self_cuda_total: float
+        cpu_total: float
+        self_cpu_memory: float
+        cpu_memory: float
+        self_cuda_memory: float
+        self_memory: float
+        occurences: int
+    """
     def format_measurements(self, model, name, self_cpu_total, cpu_total, self_cuda_total,
                             cuda_total, self_cpu_memory, cpu_memory, self_cuda_memory,
                             cuda_memory, occurrences):
@@ -225,7 +251,7 @@ class Profile(object):
             else 0
         )
         occurrences = occurrences if occurrences else 0
-        
+
         return KPIObject(
         model = model,
         name = name,
@@ -239,13 +265,21 @@ class Profile(object):
         cuda_memory=cuda_memory,
         occurrences=occurrences,
     )
-        
+
+    """
+    exporting the stored measurment data to CSV
+
+    prams:
+        rows: list
+        method: string
+
+    """
     def exportToCSV(self, rows, method):
         model = rows[0].model
         file = 'csv/' + model + method + "_KPI.csv"
         f = open(file, 'w')
         with f:
-            headers = ['MODULE', 'SELF_CPU_TOTAL', 'SELF_CPU_TIME_UOM', 'CPU_TOTAL', 'CPU_TOTAL_UOM', 
+            headers = ['MODULE', 'SELF_CPU_TOTAL', 'SELF_CPU_TIME_UOM', 'CPU_TOTAL', 'CPU_TOTAL_UOM',
                        'SELF_GPU_TOTAL', 'SELF_GPU_UOM', 'GPU_TOTAL', 'GPU_TOTAL_UOM',
                        'SELF_CPU MEM','SELF_CPU_MEM_UOM', 'CPU_MEM','CPU_MEM_UOM','SELF_GPU_MEM',
                        'SELF_GPU_MEM_UOM','GPU_MEM','GPU_MEM_UOM','NUMBER_OF_CALLS', 'NUMBER_OF_PARAMS']
@@ -253,20 +287,20 @@ class Profile(object):
             writer.writeheader()
             for i in range(len(rows)):
                 kpi = rows[i]
-                writer.writerow({'MODULE':kpi.name, 
-                                 'SELF_CPU_TOTAL':kpi.self_cpu_total, 
+                writer.writerow({'MODULE':kpi.name,
+                                 'SELF_CPU_TOTAL':kpi.self_cpu_total,
                                  'SELF_CPU_TIME_UOM': 'ms',
-                                 'CPU_TOTAL':kpi.cpu_total, 
-                                 'CPU_TOTAL_UOM': 'ms', 
-                                 'SELF_GPU_TOTAL':kpi.self_cuda_total, 
+                                 'CPU_TOTAL':kpi.cpu_total,
+                                 'CPU_TOTAL_UOM': 'ms',
+                                 'SELF_GPU_TOTAL':kpi.self_cuda_total,
                                  'SELF_GPU_UOM':'ms',
-                                 'GPU_TOTAL':kpi.cuda_total, 
+                                 'GPU_TOTAL':kpi.cuda_total,
                                  'GPU_TOTAL_UOM': 'ms',
-                                 'SELF_CPU MEM':kpi.self_cpu_memory, 
+                                 'SELF_CPU MEM':kpi.self_cpu_memory,
                                  'SELF_CPU_MEM_UOM': 'kb',
                                  'CPU_MEM':kpi.cpu_memory,
-                                 'CPU_MEM_UOM': 'kb', 
-                                 'SELF_GPU_MEM':kpi.self_cuda_memory, 
+                                 'CPU_MEM_UOM': 'kb',
+                                 'SELF_GPU_MEM':kpi.self_cuda_memory,
                                  'SELF_GPU_MEM_UOM':'kb',
                                  'GPU_MEM':kpi.cuda_memory,
                                  'GPU_MEM_UOM': 'kb',
@@ -275,4 +309,4 @@ class Profile(object):
                                  })
 
         return file
-        
+
