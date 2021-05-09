@@ -22,7 +22,8 @@ torch.manual_seed(0)
 
 print('Using PyTorch version', torch.__version__)
 
-### Preparing Training and Test Sets ###
+
+### Preparing Train, Val, Test Sets ###
 directory = './data/COVID-19_Radiography_Dataset'
 
 source_dirs = ['Normal', 'Viral Pneumonia', 'COVID','Lung_Opacity']
@@ -101,87 +102,32 @@ print('Num of training batches', len(dl_train))
 print('Num of validation batches', len(dl_val))
 print('Num of test batches', len(dl_test))
 
-### Data Visualization ###
 class_names = train_dataset.class_names
 
-#input: Y_pred,Y_true
-#output: accuracy, auc, precision, recall, f1-score
-def classification_metrics(Y_pred, Y_true):
-    return [accuracy_score(Y_true, Y_pred),
-            roc_auc_score(Y_true, Y_pred),
-            precision_score(Y_true, Y_pred),
-            recall_score(Y_true, Y_pred),
-            f1_score(Y_true, Y_pred)]
 
-def show_images(images,labels, preds):
-    plt.figure(figsize=(8,4))
-    
-    for i, image in enumerate(images):
-        plt.subplot(1, 6, i + 1, xticks = [], yticks =[]) # x & y ticks are set to blank
-        image = image.numpy().transpose((1, 2, 0)) # Channel first then height and width
-        mean = np.array([0.485, 0.456, 0.406])
-        std = np.array([0.229, 0.224, 0.225])
-        image = image * std + mean
-        image = np.clip(image, 0., 1.)
-        plt.imshow(image)
-        
-        col = 'green' if preds[i] == labels[i] else 'red'
-        
-        plt.xlabel(f'{class_names[int(labels[i].numpy())]}')
-        plt.ylabel(f'{class_names[int(preds[i].numpy())]}', color=col)
-    plt.tight_layout()
-    plt.show()
-
-# images, labels = next(iter(dl_train)) #Fetch the next batch of images
-# show_images(images, labels, labels)
-
-# images, labels = next(iter(dl_val))
-# show_images(images, labels, labels)
-
-# images, labels = next(iter(dl_test))
-# show_images(images, labels, labels)
-
-
-### Creating the Model ###
+### Creating the Model list by a pair of name string and model class from C19_model ###
 C_models = [
-          #('resnet18', C19_model.resnet18()),
-          #('densenet', C19_model.densenet()),
-          #('resnet50', C19_model.resnet50()),
-          #('alexnet', C19_model.alexnet()),
-          #('mobilenet', C19_model.mobilenet())#,
-          #('googlenet', C19_model.googlenet()),
-          #('vgg19', C19_model.vgg19())
+          ('resnet18', C19_model.resnet18()),
+          ('densenet', C19_model.densenet()),
+          ('resnet50', C19_model.resnet50()),
+          ('alexnet', C19_model.alexnet()),
+          ('mobilenet', C19_model.mobilenet())#,
+          ('googlenet', C19_model.googlenet()),
+          ('vgg19', C19_model.vgg19())
           ('squeezenet', C19_model.squeezenet())
         ]
 
-def show_preds():
-    model.eval()  #Setting the model to evaluation mode
-    images, labels = next(iter(dl_test))
-
-    with Profile(model, use_cuda=False, profile_memory=True) as prof:
-        outputs = model(images)
-        
-    if torch.cuda.device_count() > 1:
-        outputs = outputs.cpu()
-
-    _, preds=torch.max(outputs, 1)
-    #print(prof.display(show_events=False))
-    prof.getKPIData()
-
-    show_images(images, labels, preds)
-    acc, auc_, precision, recall, f1score = classification_metrics(preds,labels)
-
 
 ### Training the Model ###
+# input: epochs: maximum epochs to run; name: the model name from C_modles list to run
 def train(epochs, name):
     print('*'*40)
     print('Starting training model: ' + name + ' ...')
     print('*'*40)
     global model
-    n_epochs_stop = 3
+    n_epochs_stop = 3   # early stopping criteria
     min_val_loss = np.Inf
     epochs_no_improve = 0
-    #print(model)
 
     for e in range(0, epochs):
         print('='*20)
@@ -191,8 +137,8 @@ def train(epochs, name):
         train_loss = 0.
         val_loss = 0.  #Not computing val_loss since we'll be evaluating the model multiple times within one epoch
         
-        model.train() # set model to training phase
-        
+        model.train() # set model to training mode
+        # train on entire epoch
         for train_step, (images, labels) in enumerate(dl_train):
             optimizer.zero_grad()
             if torch.cuda.device_count() > 0:
@@ -211,10 +157,9 @@ def train(epochs, name):
 
         #Evaluating the model at the end of epoch
         print(f'Evaluating at epoch {e + 1}/{epochs}')
-        #accuracy = 0
         y_true = []
         y_pred = []
-        model.eval() # set model to eval phase
+        model.eval() # set model to eval mode
         for val_step, (images, labels) in enumerate(dl_val):
             if torch.cuda.device_count() > 0:
                 outputs = model(images.to(device))
@@ -229,25 +174,26 @@ def train(epochs, name):
                 labels = labels.cpu()
 
             _, preds = torch.max(outputs, 1) # 1 corresponds to the values and ) corresponds to the no of examples
-            #accuracy += sum((preds == labels).numpy()) #adding correct preds to acc
+
             y_true = np.append(y_true, labels.numpy())
             y_pred = np.append(y_pred, preds.numpy())
 
+        #Calculate the performance metrics accuracy and weighted F1 score
         val_loss /= (val_step + 1) # 15 test batches so this logic gives the value for each step
-        #accuracy = accuracy/len(test_dataset)
         print(f'Validation Loss: {val_loss:.4f}')
         f1_val = f1_score(y_true, y_pred, average='weighted')
         accuracy_val = accuracy_score(y_true, y_pred)
         print(f"F1 Score: {f1_val:.4f}, Accuracy: {accuracy_val :.4f}")
         C_nnPerf = nnPerf()
+        #add the new performance metrics to file
         C_nnPerf.saveAccToCSV(csv_filepath=val_file, epoch=e, accuracy=accuracy_val, f1score=f1_val)
 
         # If the validation loss is at a minimum
         if val_loss < min_val_loss:
-            # Save the model
+            # Save the model when lower than the min_val_loss
             torch.save(model, "pt_files/"+name+".pt")
-            epochs_no_improve = 0
-            min_val_loss = val_loss
+            epochs_no_improve = 0 #reset the counter for early stopping
+            min_val_loss = val_loss #update the min_val_loss
         else:
             epochs_no_improve += 1
 
@@ -255,12 +201,13 @@ def train(epochs, name):
             if epochs_no_improve == n_epochs_stop:
                 print('Training stopped early ...')
                 return
-
+        #switching back to train mode
         model.train()    
             
     print('Training completed ...')
 
 for name, c_model in C_models:
+    # Loading pre-trained model as well as loss funtiona and optimizer from the C19_model, one at a time from C_models
     model = c_model.get_model()
     loss_fn = c_model.get_loss()
     optimizer = c_model.get_optimizer()
@@ -280,7 +227,6 @@ for name, c_model in C_models:
 
     train(epochs=10, name=name)
 
-    # torch.save(model, name + '.pt')
     print('='*20)
     print("Model: ", name , " was saved.")
     print('='*20)
