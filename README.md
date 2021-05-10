@@ -33,10 +33,10 @@
    - You are ready to go.
 
 ##### 4) Run the train.py to train the models listed in C19_model.py.
-   - train.py will first create a folder "model_data" and allocate the data in "COVID-19_Radiography_Dataset" to train/val/test folder respectively based on 8:1:1 ratio.
+   - train.py first creates a folder "model_data" and allocates the data in "COVID-19_Radiography_Dataset" to train/val/test folder respectively based on 8:1:1 ratio.
    - After the training:
-     - Trained models will be saved to "pt_files" folder
-     - Validation performance data will be saved to "csv" folder
+     - Trained models are saved to "pt_files" folder
+     - Validation performance data are saved to "csv" folder
 
 ##### 5) Run run.sh to evaluate models and capture KPI data
-   - KPI data will be saved to "csv" folder
+   - KPI data are saved to "csv" folder
