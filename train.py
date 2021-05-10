@@ -37,6 +37,7 @@ if not os.path.isdir("model_data"):
 
 
 ### Creating Custom Dataset ###
+### Reference#https://medium.com/analytics-vidhya/detecting-covid-19-using-chest-x-ray-images-a6fc822b73cc##
 class ChestXRayDataset(torch.utils.data.Dataset):
     def __init__(self, image_dirs, transform):
         def get_images(class_name):
