@@ -40,9 +40,9 @@
 
 ##### 5) Run run.sh to evaluate models and capture KPI data
    - run.sh will call main.py with a GPU flag and then call main.py without a GPU flag
-   - main.py will run through the evaluation framework and output resource usage statistics and accuracy scores
+   - main.py will run through the evaluation framework and output resource usage statistics and accuracy scores for every model given
    - KPI data are saved to "csv" folder
 
 
 ##### 6) Citations
-   - Our profiler was extended from the source code (https://github.com/awwong1/torchprof/blob/master/torchprof/profile.py)
+   - Our profiler we created was an extension from the source code (https://github.com/awwong1/torchprof/blob/master/torchprof/profile.py)
