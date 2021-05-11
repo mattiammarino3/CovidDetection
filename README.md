@@ -46,3 +46,4 @@
 
 ##### 6) Citations
    - Our profiler we created was an extension from the source code (https://github.com/awwong1/torchprof/blob/master/torchprof/profile.py)
+   - Our custom dataset references code from https://medium.com/analytics-vidhya/detecting-covid-19-using-chest-x-ray-images-a6fc822b73cc##
