@@ -39,4 +39,10 @@
      - Validation performance data are saved to "csv" folder
 
 ##### 5) Run run.sh to evaluate models and capture KPI data
+   - run.sh will call main.py with a GPU flag and then call main.py without a GPU flag
+   - main.py will run through the evaluation framework and output resource usage statistics and accuracy scores
    - KPI data are saved to "csv" folder
+
+
+##### 6) Citations
+   - Our profiler was extended from the source code (https://github.com/awwong1/torchprof/blob/master/torchprof/profile.py)
